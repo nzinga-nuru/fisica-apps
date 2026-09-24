@@ -2,44 +2,212 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Apps de Física</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Física II — Oscilações e Ondas</title>
+<meta name="description" content="Simulações interativas de MHS e modos vibracionais para Física II.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root { color-scheme: light dark; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    max-width: 720px;
+  :root{
+    --bg: #121A1C;
+    --surface: #192427;
+    --line: #29383B;
+    --ink: #ECEFEA;
+    --ink-dim: #93A6A1;
+    --green: #64C596;
+    --amber: #E3A06B;
+    color-scheme: dark;
+  }
+
+  *{ box-sizing: border-box; }
+
+  html{
+    scroll-padding-top: env(safe-area-inset-top, 0px);
+  }
+
+  body{
+    margin: 0;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  a{ color: inherit; }
+
+  .wrap{
+    max-width: 680px;
     margin: 0 auto;
-    padding: 2.5rem 1.5rem;
-    line-height: 1.5;
+    padding: 3.2rem 1.5rem 4rem;
   }
-  h1 { font-size: 1.5rem; margin-bottom: 0.25rem; }
-  .curso { margin-top: 2rem; }
-  .curso h2 { font-size: 1.1rem; text-transform: uppercase; letter-spacing: 0.03em; opacity: 0.7; }
-  ul { list-style: none; padding: 0; }
-  li { margin: 0.5rem 0; }
-  a {
+
+  header p.eyebrow{
+    margin: 0 0 0.6rem;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.85rem;
+    color: var(--green);
+  }
+
+  h1{
+    font-family: "Newsreader", Georgia, serif;
+    font-weight: 600;
+    font-size: clamp(2.1rem, 5.4vw, 3rem);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+    margin: 0 0 0.9rem;
+  }
+
+  header p.lede{
+    margin: 0;
+    max-width: 42ch;
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: var(--ink-dim);
+  }
+
+  /* onda: divisor estrutural, não decoração — a própria forma do assunto */
+  .onda{
     display: block;
-    padding: 0.9rem 1.1rem;
-    border: 1px solid color-mix(in srgb, currentColor 15%, transparent);
-    border-radius: 10px;
-    text-decoration: none;
-    color: inherit;
-    font-weight: 500;
+    width: 100%;
+    height: 44px;
+    margin: 2.6rem 0;
+    overflow: visible;
   }
-  a:hover { border-color: color-mix(in srgb, currentColor 40%, transparent); }
+  .onda path{
+    fill: none;
+    stroke: var(--line);
+    stroke-width: 1.5;
+  }
+  .onda path.ativa{
+    stroke: var(--green);
+    stroke-width: 1.5;
+    stroke-dasharray: 6 5;
+    animation: fluir 5s linear infinite;
+  }
+  @keyframes fluir{
+    to{ stroke-dashoffset: -220; }
+  }
+  @media (prefers-reduced-motion: reduce){
+    .onda path.ativa{ animation: none; }
+  }
+
+  section.app{
+    padding: 0.2rem 0 2.6rem;
+  }
+
+  section.app h2{
+    font-family: "Newsreader", Georgia, serif;
+    font-weight: 600;
+    font-style: italic;
+    font-size: 1.55rem;
+    margin: 0 0 0.2rem;
+  }
+
+  section.app p.rotulo{
+    margin: 0 0 1.1rem;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.82rem;
+    color: var(--ink-dim);
+  }
+
+  section.app p{
+    margin: 0 0 1rem;
+    max-width: 66ch;
+    line-height: 1.7;
+    font-size: 0.98rem;
+  }
+
+  section.app p:last-of-type{ margin-bottom: 1.4rem; }
+
+  .mono{
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.93em;
+    color: var(--amber);
+  }
+
+  .formula{
+    display: inline-block;
+    margin: 0.2rem 0 1.3rem;
+    padding: 0.7rem 1rem;
+    border: 1px dashed var(--amber);
+    border-radius: 3px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.95rem;
+    color: var(--amber);
+    background: color-mix(in srgb, var(--amber) 7%, transparent);
+  }
+
+  .abrir{
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.3rem;
+    background: var(--green);
+    color: #0E1B14;
+    font-family: "IBM Plex Sans", sans-serif;
+    font-weight: 600;
+    font-size: 0.95rem;
+    text-decoration: none;
+    border-radius: 6px;
+  }
+  .abrir:focus-visible, a:focus-visible{
+    outline: 2px solid var(--green);
+    outline-offset: 3px;
+  }
+  .abrir:hover{ background: #78D6A6; }
+
+  footer{
+    margin-top: 1rem;
+    padding-top: 1.6rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.85rem;
+    color: var(--ink-dim);
+  }
+
+  @media (max-width: 420px){
+    .wrap{ padding: 2.4rem 1.25rem 3rem; }
+  }
 </style>
 </head>
 <body>
-  <h1>Apps de Física</h1>
-  <p>Simulações interativas para as aulas.</p>
+<div class="wrap">
 
-  <div class="curso">
-    <h2>Física II</h2>
-    <ul>
-      <li><a href="fisica-ii/mhs/">MHS — Círculo de Referência</a></li>
-      <li><a href="fisica-ii/modos-vibracionais/">Modos Vibracionais — Onda Estacionária</a></li>
-    </ul>
-  </div>
+  <header>
+    <p class="eyebrow">Física II — UFRB</p>
+    <h1>Oscilações e ondas, para ver em movimento</h1>
+    <p class="lede">Simulações que acompanham o que é discutido em aula. Cada uma abre em tela cheia, sem instalar nada — funciona no iPad e no celular.</p>
+  </header>
+
+  <svg class="onda" viewBox="0 0 600 44" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,22 C 50,2 100,2 150,22 C 200,42 250,42 300,22 C 350,2 400,2 450,22 C 500,42 550,42 600,22" />
+    <path class="ativa" d="M0,22 C 50,2 100,2 150,22 C 200,42 250,42 300,22 C 350,2 400,2 450,22 C 500,42 550,42 600,22" />
+  </svg>
+
+  <section class="app">
+    <h2>MHS — círculo de referência</h2>
+    <p class="rotulo">Sistema massa-mola</p>
+    <p>Um corpo preso a uma mola ideal, deslocado da posição de equilíbrio, oscila sob uma força restauradora proporcional ao deslocamento: <span class="mono">F = −kx</span>. A solução dessa equação é o próprio MHS.</p>
+    <p>A simulação mostra por que a projeção de um ponto em movimento circular uniforme sobre um eixo é, ela mesma, um MHS — a mesma construção usada para justificar amplitude, fase e velocidade angular <span class="mono">ω</span>.</p>
+    <div class="formula">x(t) = A cos(ωt + φ), &nbsp; ω = √(k/m)</div>
+    <div><a class="abrir" href="fisica-ii/mhs/">Abrir simulação</a></div>
+  </section>
+
+  <section class="app">
+    <h2>Modos vibracionais</h2>
+    <p class="rotulo">Corda fixa nas duas extremidades</p>
+    <p>Duas ondas idênticas se propagando em sentidos opostos numa corda presa nas duas pontas se somam e formam um padrão que não se desloca: uma onda estacionária, com nós parados e ventres de oscilação máxima.</p>
+    <p>Só alguns comprimentos de onda cabem inteiros entre as extremidades fixas — por isso a corda só vibra em frequências específicas, os harmônicos. A simulação deixa ajustar o modo <span class="mono">n</span> e ver o padrão mudar em tempo real.</p>
+    <div class="formula">λₙ = 2L/n, &nbsp; fₙ = n·f₁, &nbsp; n = 1, 2, 3, …</div>
+    <div><a class="abrir" href="fisica-ii/modos-vibracionais/">Abrir simulação</a></div>
+  </section>
+
+  <footer>
+    Material de apoio para as aulas de Física II. Mais aplicações entram aqui conforme forem ficando prontas.
+  </footer>
+
+</div>
 </body>
 </html>
