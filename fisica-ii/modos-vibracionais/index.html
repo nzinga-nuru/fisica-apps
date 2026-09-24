@@ -1,0 +1,832 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Onda Estacionária</title>
+<style>
+  :root{
+    --bg:#eef2f4;
+    --panel:#ffffff;
+    --ink:#16232e;
+    --ink-dim:#546472;
+    --grid:#d6dee3;
+    --axis:#9fb0bb;
+    --accent:#2f6fe0;
+    --wave1:#2f6fe0;
+    --wave2:#e0762f;
+    --resultant:#c22a63;
+    --node:#16232e;
+    --antinode:#c22a63;
+    --border:#d6dee3;
+    --track:#dbe2e6;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e161f;
+      --panel:#141f2b;
+      --ink:#e9eef2;
+      --ink-dim:#93a4b2;
+      --grid:#22323f;
+      --axis:#3a4e5c;
+      --accent:#5f9bff;
+      --wave1:#5f9bff;
+      --wave2:#ff9d5c;
+      --resultant:#ff5c93;
+      --node:#e9eef2;
+      --antinode:#ff5c93;
+      --border:#22323f;
+      --track:#1c2833;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e161f;
+    --panel:#141f2b;
+    --ink:#e9eef2;
+    --ink-dim:#93a4b2;
+    --grid:#22323f;
+    --axis:#3a4e5c;
+    --accent:#5f9bff;
+    --wave1:#5f9bff;
+    --wave2:#ff9d5c;
+    --resultant:#ff5c93;
+    --node:#e9eef2;
+    --antinode:#ff5c93;
+    --border:#22323f;
+    --track:#1c2833;
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    padding-inline:16px;
+    padding-block:28px;
+    display:flex;
+    justify-content:center;
+  }
+  .page{
+    width:100%;
+    max-width:960px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  header h1{
+    font-family:"Newsreader", Georgia, "Times New Roman", serif;
+    font-weight:600;
+    font-size:clamp(1.6rem, 1.1rem + 2vw, 2.3rem);
+    margin:0 0 6px 0;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:0;
+    color:var(--ink-dim);
+    font-size:0.98rem;
+    max-width:62ch;
+    line-height:1.5;
+  }
+
+  .stage{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  .canvas-wrap{
+    position:relative;
+    width:100%;
+    aspect-ratio: 16 / 7.2;
+    border-radius:10px;
+    overflow:hidden;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 100% 20%,
+      var(--panel);
+    border:1px solid var(--border);
+  }
+  canvas{
+    display:block;
+    width:100%;
+    height:100%;
+  }
+
+  .transport{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .play-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    padding:9px 18px;
+    font-size:0.92rem;
+    font-weight:600;
+    font-family:inherit;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .play-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  .play-btn svg{ width:14px; height:14px; }
+
+  .harmonic-name{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:0.86rem;
+    color:var(--ink-dim);
+    background:var(--track);
+    border-radius:999px;
+    padding:6px 14px;
+    white-space:nowrap;
+  }
+  .harmonic-name b{ color:var(--ink); font-weight:600; }
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-left:auto;
+    font-size:0.82rem;
+    color:var(--ink-dim);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+  .swatch{ width:16px; height:0; border-top-width:3px; border-top-style:solid; display:inline-block; }
+  .swatch.dot{ width:9px; height:9px; border-radius:50%; border:none; background:currentColor; }
+
+  .panels{
+    display:grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap:16px;
+  }
+  @media (max-width: 640px){
+    .panels{ grid-template-columns: 1fr; }
+  }
+
+  .snap-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:12px;
+  }
+  @media (max-width: 560px){
+    .snap-grid{ grid-template-columns:1fr; }
+  }
+  .snap-card{
+    background:var(--bg);
+    border:1px solid var(--border);
+    border-radius:10px;
+    padding:10px;
+    cursor:pointer;
+    text-align:left;
+    font-family:inherit;
+    color:inherit;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .snap-card:hover{ border-color:var(--accent); }
+  .snap-card:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+  .snap-card.active{ border-color:var(--accent); box-shadow:0 0 0 1px var(--accent) inset; }
+  .snap-canvas-wrap{
+    width:100%;
+    aspect-ratio:16/8;
+    border-radius:6px;
+    overflow:hidden;
+    background:var(--panel);
+    border:1px solid var(--border);
+  }
+  .snap-canvas-wrap canvas{ display:block; width:100%; height:100%; }
+  .snap-title{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:0.86rem;
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+  }
+  .snap-desc{
+    display:block;
+    font-size:0.78rem;
+    color:var(--ink-dim);
+    line-height:1.4;
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:18px 20px;
+  }
+  .panel h2{
+    font-family:"Newsreader", Georgia, serif;
+    font-size:1.02rem;
+    font-weight:600;
+    margin:0 0 14px 0;
+  }
+
+  .control{ margin-bottom:16px; }
+  .control:last-child{ margin-bottom:0; }
+  .control-label{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-size:0.86rem;
+    color:var(--ink-dim);
+    margin-bottom:6px;
+  }
+  .control-label b{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    color:var(--ink);
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+  }
+  input[type="range"]{
+    -webkit-appearance:none;
+    width:100%;
+    height:4px;
+    border-radius:999px;
+    background:var(--track);
+    outline-offset:4px;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:17px; height:17px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid var(--panel);
+    box-shadow:0 0 0 1px var(--accent);
+    cursor:pointer;
+    margin-top:-6.5px;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:15px; height:15px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid var(--panel);
+    box-shadow:0 0 0 1px var(--accent);
+    cursor:pointer;
+  }
+  input[type="range"]::-moz-range-track{
+    height:4px; border-radius:999px; background:var(--track);
+  }
+
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding-block:9px;
+    border-top:1px solid var(--border);
+  }
+  .toggle-row:first-of-type{ border-top:none; padding-top:0; }
+  .toggle-row label{ font-size:0.9rem; cursor:pointer; }
+  .toggle-row .hint{ display:block; font-size:0.78rem; color:var(--ink-dim); margin-top:2px; }
+
+  .switch{
+    position:relative;
+    width:38px; height:22px;
+    flex-shrink:0;
+  }
+  .switch input{
+    position:absolute; inset:0; opacity:0; margin:0; cursor:pointer; z-index:1;
+  }
+  .switch .track{
+    position:absolute; inset:0;
+    background:var(--track);
+    border-radius:999px;
+    transition:background .15s ease;
+  }
+  .switch .thumb{
+    position:absolute; top:3px; left:3px;
+    width:16px; height:16px;
+    border-radius:50%;
+    background:var(--panel);
+    box-shadow:0 1px 2px rgba(0,0,0,.25);
+    transition:transform .15s ease;
+  }
+  .switch input:checked + .track{ background:var(--accent); }
+  .switch input:checked ~ .thumb{ transform:translateX(16px); }
+  .switch input:focus-visible ~ .track{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .formula{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:0.98rem;
+    background:var(--track);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-bottom:14px;
+    overflow-x:auto;
+    font-variant-numeric:tabular-nums;
+  }
+  .readout-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 16px;
+  }
+  .readout-grid dt{
+    font-size:0.78rem;
+    color:var(--ink-dim);
+    margin:0;
+  }
+  .readout-grid dd{
+    margin:2px 0 0 0;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:0.98rem;
+    font-variant-numeric:tabular-nums;
+  }
+
+  footer{
+    text-align:center;
+    font-size:0.78rem;
+    color:var(--ink-dim);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    .play-btn{ scroll-behavior:auto; }
+  }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="page">
+  <header>
+    <h1>Onda estacionária numa corda</h1>
+    <p>Uma corda presa nas duas pontas só vibra em certos modos: os <b>harmônicos</b>. Cada modo é a soma de duas ondas idênticas viajando em sentidos opostos — ligue "mostrar ondas componentes" para ver essa soma acontecendo.</p>
+  </header>
+
+  <div class="stage">
+    <div class="canvas-wrap">
+      <canvas id="cv" role="img" aria-label="Animação da onda estacionária na corda"></canvas>
+    </div>
+
+    <div class="transport">
+      <button class="play-btn" id="playBtn" type="button">
+        <svg id="playIcon" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5-9-5.5z"/></svg>
+        <svg id="pauseIcon" viewBox="0 0 16 16" fill="currentColor" hidden><path d="M4 2.5h3v11H4v-11zM9 2.5h3v11H9v-11z"/></svg>
+        <span id="playLabel">Pausar</span>
+      </button>
+      <span class="harmonic-name" id="harmonicName">Fundamental (1º harmônico)</span>
+
+      <div class="legend">
+        <span><i class="swatch" style="border-color:var(--resultant)"></i>onda estacionária</span>
+        <span id="legendEnvelope" hidden><i class="swatch" style="border-color:var(--resultant); opacity:0.5"></i>envoltória</span>
+        <span id="legendComponents" hidden>
+          <i class="swatch" style="border-color:var(--wave1)"></i>viaja &rarr;
+          &nbsp;<i class="swatch" style="border-color:var(--wave2)"></i>viaja &larr;
+        </span>
+        <span><i class="swatch dot" style="color:var(--node)"></i>nó</span>
+        <span><i class="swatch dot" style="color:var(--antinode)"></i>ventre</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <h2>Instantâneos num período</h2>
+    <div class="snap-grid">
+      <button class="snap-card" id="snapBtn0" type="button" aria-label="Ir para t = 0">
+        <span class="snap-canvas-wrap"><canvas id="snapCv0"></canvas></span>
+        <span class="snap-title">t = 0</span>
+        <span class="snap-desc">Instante inicial: a corda está na posição de deslocamento máximo.</span>
+      </button>
+      <button class="snap-card" id="snapBtnQuarter" type="button" aria-label="Ir para t = T sobre 4">
+        <span class="snap-canvas-wrap"><canvas id="snapCvQuarter"></canvas></span>
+        <span class="snap-title">t = T/4</span>
+        <span class="snap-desc">A corda se anula: todos os pontos cruzam y = 0 ao mesmo tempo.</span>
+      </button>
+      <button class="snap-card" id="snapBtnHalf" type="button" aria-label="Ir para t = T sobre 2">
+        <span class="snap-canvas-wrap"><canvas id="snapCvHalf"></canvas></span>
+        <span class="snap-title">t = T/2</span>
+        <span class="snap-desc">A corda se inverte: espelho da forma inicial.</span>
+      </button>
+    </div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <h2>Controles</h2>
+
+      <div class="control">
+        <div class="control-label"><span>Harmônico (n)</span><b id="nVal">1</b></div>
+        <input type="range" id="nSlider" min="1" max="8" step="1" value="1" aria-label="Número do harmônico">
+      </div>
+
+      <div class="control">
+        <div class="control-label"><span>Amplitude</span><b id="ampVal">0.70</b></div>
+        <input type="range" id="ampSlider" min="0.2" max="1" step="0.01" value="0.7" aria-label="Amplitude da onda">
+      </div>
+
+      <div class="control">
+        <div class="control-label"><span>Velocidade</span><b id="speedVal">1.0×</b></div>
+        <input type="range" id="speedSlider" min="0.25" max="2" step="0.05" value="1" aria-label="Velocidade da animação">
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <label for="toggleComponents">Mostrar ondas componentes</label>
+          <span class="hint">as duas ondas viajantes que, somadas, formam a estacionária</span>
+        </div>
+        <span class="switch">
+          <input type="checkbox" id="toggleComponents">
+          <span class="track"></span><span class="thumb"></span>
+        </span>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <label for="toggleEnvelope">Mostrar envoltória</label>
+          <span class="hint">limite máximo de deslocamento em cada ponto</span>
+        </div>
+        <span class="switch">
+          <input type="checkbox" id="toggleEnvelope">
+          <span class="track"></span><span class="thumb"></span>
+        </span>
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <label for="toggleNodes">Marcar nós e ventres</label>
+          <span class="hint">pontos de deslocamento sempre nulo e sempre máximo</span>
+        </div>
+        <span class="switch">
+          <input type="checkbox" id="toggleNodes" checked>
+          <span class="track"></span><span class="thumb"></span>
+        </span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>O que a corda está fazendo</h2>
+      <div class="formula" id="formulaBox">y(x,t) = 2A·sen(kx)·cos(ωt)</div>
+      <dl class="readout-grid">
+        <div><dt>Comprimento de onda λ</dt><dd id="outLambda">2,00 · L</dd></div>
+        <div><dt>Frequência relativa</dt><dd id="outFreq">1,00 · f₀</dd></div>
+        <div><dt>Número de nós</dt><dd id="outNodes">2</dd></div>
+        <div><dt>Número de ventres</dt><dd id="outAntinodes">1</dd></div>
+      </dl>
+    </div>
+  </div>
+
+  <footer>y(x,t) = A·sen(kx − ωt) + A·sen(kx + ωt) = 2A·sen(kx)·cos(ωt) — a soma de duas ondas viajantes em sentidos opostos.</footer>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var canvas = document.getElementById("cv");
+  var ctx = canvas.getContext("2d");
+
+  var nSlider = document.getElementById("nSlider");
+  var ampSlider = document.getElementById("ampSlider");
+  var speedSlider = document.getElementById("speedSlider");
+  var toggleComponents = document.getElementById("toggleComponents");
+  var toggleEnvelope = document.getElementById("toggleEnvelope");
+  var toggleNodes = document.getElementById("toggleNodes");
+  var playBtn = document.getElementById("playBtn");
+  var playIcon = document.getElementById("playIcon");
+  var pauseIcon = document.getElementById("pauseIcon");
+  var playLabel = document.getElementById("playLabel");
+  var legendComponents = document.getElementById("legendComponents");
+  var legendEnvelope = document.getElementById("legendEnvelope");
+
+  var nVal = document.getElementById("nVal");
+  var ampVal = document.getElementById("ampVal");
+  var speedVal = document.getElementById("speedVal");
+  var harmonicName = document.getElementById("harmonicName");
+  var outLambda = document.getElementById("outLambda");
+  var outFreq = document.getElementById("outFreq");
+  var outNodes = document.getElementById("outNodes");
+  var outAntinodes = document.getElementById("outAntinodes");
+  var formulaBox = document.getElementById("formulaBox");
+
+  var snapDefs = [
+    { canvas: document.getElementById("snapCv0"), btn: document.getElementById("snapBtn0"), phase: 0 },
+    { canvas: document.getElementById("snapCvQuarter"), btn: document.getElementById("snapBtnQuarter"), phase: Math.PI / 2 },
+    { canvas: document.getElementById("snapCvHalf"), btn: document.getElementById("snapBtnHalf"), phase: Math.PI }
+  ];
+  snapDefs.forEach(function(s){ s.ctx = s.canvas.getContext("2d"); });
+
+  var reduceMotion = false;
+  try { reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches; } catch(e) {}
+
+  var state = {
+    n: 1,
+    ampFrac: 0.7,
+    speed: 1,
+    playing: !reduceMotion,
+    showComponents: false,
+    showEnvelope: false,
+    showNodes: true,
+    t: 0
+  };
+
+  var OMEGA0 = 1.7;
+
+  function ordinalHarmonic(n){
+    if (n === 1) return "Fundamental (1º harmônico)";
+    return n + "º harmônico";
+  }
+
+  function fmt(x, d){
+    return x.toLocaleString("pt-BR", {minimumFractionDigits:d, maximumFractionDigits:d});
+  }
+
+  function readCSSVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  var W = 0, H = 0, DPR = 1;
+  function resize(){
+    var rect = canvas.getBoundingClientRect();
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(1, Math.round(rect.width));
+    H = Math.max(1, Math.round(rect.height));
+    canvas.width = Math.round(W * DPR);
+    canvas.height = Math.round(H * DPR);
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+
+  function updateReadouts(){
+    var n = state.n;
+    nVal.textContent = n;
+    ampVal.textContent = fmt(state.ampFrac, 2);
+    speedVal.textContent = fmt(state.speed, 2) + "×";
+    harmonicName.textContent = ordinalHarmonic(n);
+    outLambda.textContent = fmt(2 / n, 2) + " · L";
+    outFreq.textContent = fmt(n, 2) + " · f₀";
+    outNodes.textContent = n + 1;
+    outAntinodes.textContent = n;
+    formulaBox.textContent = "y(x,t) = 2A·sen(" + n + "πx/L)·cos(" + n + "ω₀t)";
+  }
+
+  // amplitude em pixels de UMA onda componente (A); a resultante e a
+  // envoltória chegam a 2×A_px — por isso dividimos por 2 aqui, senão a
+  // envoltória em amplitude/harmônico altos ultrapassa a altura do canvas.
+  function amplitudePx(ampFrac, H, pad){
+    return ampFrac * (H / 2 - pad) / 2;
+  }
+
+  // desenha eixo, apoios, curva resultante e (opcionalmente) nós/ventres
+  // num canvas de tamanho W×H qualquer — usado tanto no palco principal
+  // quanto nas miniaturas de instantâneo. Não limpa o canvas: quem chama
+  // decide quando limpar, para poder desenhar em cima de outras camadas.
+  function drawCore(c, W, H, n, ampFrac, cosPhase, showNodes, pad){
+    var midY = H / 2;
+    var A_px = amplitudePx(ampFrac, H, pad);
+
+    var inkDim = readCSSVar("--ink-dim");
+    var axis = readCSSVar("--axis");
+    var resultant = readCSSVar("--resultant");
+    var node = readCSSVar("--node");
+    var antinode = readCSSVar("--antinode");
+
+    c.strokeStyle = axis;
+    c.lineWidth = 1.5;
+    c.beginPath();
+    c.moveTo(pad, midY);
+    c.lineTo(W - pad, midY);
+    c.stroke();
+
+    c.fillStyle = inkDim;
+    [pad, W - pad].forEach(function(px){
+      c.beginPath();
+      c.moveTo(px - 7, midY + 14);
+      c.lineTo(px + 7, midY + 14);
+      c.lineTo(px, midY + 3);
+      c.closePath();
+      c.fill();
+    });
+
+    var span = W - 2 * pad;
+    var steps = 200;
+    var k = n * Math.PI;
+
+    function pxAt(xn){ return pad + xn * span; }
+
+    c.strokeStyle = resultant;
+    c.lineWidth = 3.2;
+    c.lineJoin = "round";
+    c.lineCap = "round";
+    c.beginPath();
+    for (var i = 0; i <= steps; i++){
+      var xn = i / steps;
+      var yr = midY - 2 * A_px * Math.sin(k * xn) * cosPhase;
+      if (i === 0) c.moveTo(pxAt(xn), yr); else c.lineTo(pxAt(xn), yr);
+    }
+    c.stroke();
+
+    if (showNodes){
+      for (var j = 0; j <= n; j++){
+        var pxNode = pxAt(j / n);
+        c.fillStyle = node;
+        c.beginPath();
+        c.arc(pxNode, midY, Math.max(2.5, Math.min(4.5, pad * 0.18)), 0, Math.PI * 2);
+        c.fill();
+      }
+      for (var m = 0; m < n; m++){
+        var pxAnti = pxAt((m + 0.5) / n);
+        var envTop = 2 * A_px;
+        c.strokeStyle = antinode;
+        c.globalAlpha = 0.35;
+        c.setLineDash([2, 3]);
+        c.lineWidth = 1;
+        c.beginPath();
+        c.moveTo(pxAnti, midY - envTop);
+        c.lineTo(pxAnti, midY + envTop);
+        c.stroke();
+        c.setLineDash([]);
+        c.globalAlpha = 1;
+        c.fillStyle = antinode;
+        [midY - envTop, midY + envTop].forEach(function(py){
+          c.beginPath();
+          c.arc(pxAnti, py, Math.max(2, Math.min(3.5, pad * 0.14)), 0, Math.PI * 2);
+          c.fill();
+        });
+      }
+    }
+  }
+
+  function draw(){
+    var n = state.n;
+    var k = n * Math.PI;
+    var omega = n * OMEGA0 * state.speed;
+    var t = state.t;
+    var pad = Math.max(20, Math.min(30, W * 0.04));
+    var midY = H / 2;
+    var A_px = amplitudePx(state.ampFrac, H, pad);
+
+    var resultant = readCSSVar("--resultant");
+    var wave1 = readCSSVar("--wave1");
+    var wave2 = readCSSVar("--wave2");
+
+    var span = W - 2 * pad;
+    var steps = 260;
+    function xAt(i){ return i / steps; }
+    function pxAt(xn){ return pad + xn * span; }
+
+    ctx.clearRect(0, 0, W, H);
+
+    drawCore(ctx, W, H, n, state.ampFrac, Math.cos(omega * t), false, pad);
+
+    // envoltória: mesma cor da onda resultante, só que translúcida —
+    // desenhada por cima do eixo/apoios já traçados
+    if (state.showEnvelope){
+      ctx.strokeStyle = resultant;
+      ctx.globalAlpha = 0.38;
+      ctx.setLineDash([2, 4]);
+      ctx.lineWidth = 1.4;
+      [1, -1].forEach(function(sign){
+        ctx.beginPath();
+        for (var i = 0; i <= steps; i++){
+          var xn = xAt(i);
+          var env = 2 * A_px * Math.abs(Math.sin(k * xn));
+          var yy = midY - sign * env;
+          if (i === 0) ctx.moveTo(pxAt(xn), yy); else ctx.lineTo(pxAt(xn), yy);
+        }
+        ctx.stroke();
+      });
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+
+    // ondas componentes
+    if (state.showComponents){
+      ctx.lineWidth = 1.6;
+      ctx.setLineDash([5, 4]);
+      ctx.globalAlpha = 0.85;
+
+      ctx.strokeStyle = wave1;
+      ctx.beginPath();
+      for (var i1 = 0; i1 <= steps; i1++){
+        var xn1 = xAt(i1);
+        var y1 = midY - A_px * Math.sin(k * xn1 - omega * t);
+        if (i1 === 0) ctx.moveTo(pxAt(xn1), y1); else ctx.lineTo(pxAt(xn1), y1);
+      }
+      ctx.stroke();
+
+      ctx.strokeStyle = wave2;
+      ctx.beginPath();
+      for (var i2 = 0; i2 <= steps; i2++){
+        var xn2 = xAt(i2);
+        var y2 = midY - A_px * Math.sin(k * xn2 + omega * t);
+        if (i2 === 0) ctx.moveTo(pxAt(xn2), y2); else ctx.lineTo(pxAt(xn2), y2);
+      }
+      ctx.stroke();
+
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+
+    // onda resultante + nós/ventres por cima dos componentes e da envoltória
+    drawCore(ctx, W, H, n, state.ampFrac, Math.cos(omega * t), state.showNodes, pad);
+  }
+
+  var snapSizes = new WeakMap();
+  function resizeSnap(s){
+    var rect = s.canvas.getBoundingClientRect();
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var w = Math.max(1, Math.round(rect.width));
+    var h = Math.max(1, Math.round(rect.height));
+    s.canvas.width = Math.round(w * dpr);
+    s.canvas.height = Math.round(h * dpr);
+    s.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    snapSizes.set(s, { w: w, h: h });
+  }
+  function drawSnapshots(){
+    snapDefs.forEach(function(s){
+      var size = snapSizes.get(s);
+      if (!size) return;
+      var pad = Math.max(10, Math.min(20, size.w * 0.07));
+      s.ctx.clearRect(0, 0, size.w, size.h);
+      drawCore(s.ctx, size.w, size.h, state.n, state.ampFrac, Math.cos(s.phase), true, pad);
+    });
+  }
+
+  var lastTs = null;
+  function loop(ts){
+    if (lastTs === null) lastTs = ts;
+    var dt = Math.min((ts - lastTs) / 1000, 0.05);
+    lastTs = ts;
+    if (state.playing) state.t += dt;
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  function setPlaying(p){
+    state.playing = p;
+    playIcon.hidden = p;
+    pauseIcon.hidden = !p;
+    playLabel.textContent = p ? "Pausar" : "Reproduzir";
+    playBtn.setAttribute("aria-pressed", String(p));
+  }
+
+  playBtn.addEventListener("click", function(){ setPlaying(!state.playing); });
+
+  nSlider.addEventListener("input", function(){
+    state.n = parseInt(nSlider.value, 10);
+    updateReadouts();
+    drawSnapshots();
+  });
+  ampSlider.addEventListener("input", function(){
+    state.ampFrac = parseFloat(ampSlider.value);
+    updateReadouts();
+    drawSnapshots();
+  });
+  speedSlider.addEventListener("input", function(){
+    state.speed = parseFloat(speedSlider.value);
+    updateReadouts();
+  });
+  toggleComponents.addEventListener("change", function(){
+    state.showComponents = toggleComponents.checked;
+    legendComponents.hidden = !state.showComponents;
+  });
+  toggleEnvelope.addEventListener("change", function(){
+    state.showEnvelope = toggleEnvelope.checked;
+    legendEnvelope.hidden = !state.showEnvelope;
+  });
+  toggleNodes.addEventListener("change", function(){
+    state.showNodes = toggleNodes.checked;
+  });
+
+  function setActiveSnap(activeBtn){
+    snapDefs.forEach(function(s){ s.btn.classList.toggle("active", s.btn === activeBtn); });
+  }
+  snapDefs.forEach(function(s){
+    s.btn.addEventListener("click", function(){
+      var n = state.n;
+      var omega = n * OMEGA0 * state.speed;
+      setPlaying(false);
+      state.t = s.phase / omega;
+      setActiveSnap(s.btn);
+    });
+  });
+
+  function handleResize(){
+    resize();
+    snapDefs.forEach(resizeSnap);
+    drawSnapshots();
+  }
+
+  window.addEventListener("resize", handleResize);
+  var ro = null;
+  try {
+    ro = new ResizeObserver(handleResize);
+    ro.observe(canvas);
+    snapDefs.forEach(function(s){ ro.observe(s.canvas); });
+  } catch(e) {}
+
+  setPlaying(state.playing);
+  resize();
+  snapDefs.forEach(resizeSnap);
+  updateReadouts();
+  draw();
+  drawSnapshots();
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body></html>

@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MHS — Círculo de Referência</title>
+<style>
+  :root{
+    --bg:#0a1220;
+    --panel:#101b2e;
+    --panel-line:#1e2c47;
+    --ink:#e7edf7;
+    --ink-dim:#8ea1c2;
+    --x-color:#5eead4;
+    --v-color:#fbbf24;
+    --a-color:#fb7185;
+    --accent:#5eead4;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0;padding:0;background:var(--bg);color:var(--ink);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .mono{font-family:'SFMono-Regular',Consolas,'Liberation Mono',Menlo,monospace;}
+
+  .wrap{max-width:1180px;margin:0 auto;padding:22px 20px 40px;}
+
+  header{
+    display:flex;justify-content:space-between;align-items:baseline;
+    border-bottom:1px solid var(--panel-line);
+    padding-bottom:14px;margin-bottom:18px;flex-wrap:wrap;gap:8px;
+  }
+  header h1{
+    font-size:1.25rem;font-weight:600;margin:0;letter-spacing:.2px;
+  }
+  header .sub{color:var(--ink-dim);font-size:.8rem;}
+
+  .grid{
+    display:grid;
+    grid-template-columns: 300px 1fr;
+    gap:18px;
+  }
+  @media (max-width:820px){
+    .grid{grid-template-columns:1fr;}
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--panel-line);
+    border-radius:10px;
+    padding:16px;
+  }
+  .panel h2{
+    font-size:.72rem;text-transform:uppercase;letter-spacing:1.2px;
+    color:var(--ink-dim);margin:0 0 14px 0;font-weight:600;
+  }
+
+  .control{margin-bottom:18px;}
+  .control:last-child{margin-bottom:0;}
+  .control-label{
+    display:flex;justify-content:space-between;align-items:baseline;
+    margin-bottom:6px;font-size:.85rem;
+  }
+  .control-label .name{color:var(--ink);}
+  .control-label .val{color:var(--accent);font-size:.85rem;}
+  input[type=range]{
+    width:100%;height:4px;-webkit-appearance:none;appearance:none;
+    background:var(--panel-line);border-radius:2px;outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none;appearance:none;width:15px;height:15px;
+    border-radius:50%;background:var(--accent);cursor:pointer;
+    border:2px solid var(--bg);
+  }
+  input[type=range]::-moz-range-thumb{
+    width:15px;height:15px;border-radius:50%;background:var(--accent);
+    cursor:pointer;border:2px solid var(--bg);
+  }
+
+  .btnrow{display:flex;gap:8px;margin-top:16px;}
+  button{
+    flex:1;background:var(--panel-line);color:var(--ink);border:none;
+    padding:9px 10px;border-radius:6px;font-size:.82rem;cursor:pointer;
+    font-weight:600;transition:background .15s;
+  }
+  button:hover{background:#2a3c60;}
+  button.primary{background:var(--accent);color:#06251f;}
+  button.primary:hover{background:#7ff2df;}
+
+  .readout{
+    margin-top:16px;padding-top:14px;border-top:1px solid var(--panel-line);
+    display:grid;grid-template-columns:1fr 1fr;gap:8px 4px;font-size:.8rem;
+  }
+  .readout div span.k{color:var(--ink-dim);}
+  .readout div span.v{color:var(--ink);float:right;}
+
+  .eqbox{
+    margin-top:16px;padding-top:14px;border-top:1px solid var(--panel-line);
+  }
+  .eqbox .eqline{
+    font-size:.78rem;line-height:1.9;color:var(--ink-dim);
+  }
+  .eqbox .eqline b{color:var(--ink);font-weight:600;}
+  .eqbox .eqline .num{color:var(--accent);}
+
+  .stage-top{
+    display:grid;
+    grid-template-columns: 260px 1fr;
+    gap:16px;
+  }
+  @media (max-width:820px){
+    .stage-top{grid-template-columns:1fr;}
+  }
+
+  canvas{display:block;width:100%;}
+
+  .phasor-box, .plots-box, .spring-box{
+    background:var(--panel);border:1px solid var(--panel-line);
+    border-radius:10px;padding:12px;
+  }
+  .phasor-box h3, .plots-box h3, .spring-box h3{
+    font-size:.72rem;text-transform:uppercase;letter-spacing:1.2px;
+    color:var(--ink-dim);margin:0 0 8px 0;font-weight:600;
+  }
+
+  .legend{
+    display:flex;gap:14px;margin-top:8px;font-size:.72rem;color:var(--ink-dim);
+    flex-wrap:wrap;
+  }
+  .legend span{display:inline-flex;align-items:center;gap:5px;}
+  .legend i{width:10px;height:10px;border-radius:2px;display:inline-block;}
+
+  footer{
+    margin-top:18px;color:var(--ink-dim);font-size:.72rem;
+    border-top:1px solid var(--panel-line);padding-top:12px;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>MHS — Círculo de Referência</h1>
+    <div class="sub">sistema massa-mola horizontal · deslocamento relativo à posição de equilíbrio</div>
+  </header>
+
+  <div class="grid">
+
+    <div class="panel">
+      <h2>Parâmetros</h2>
+
+      <div class="control">
+        <div class="control-label">
+          <span class="name">Amplitude A</span>
+          <span class="val mono" id="valA">1.00 m</span>
+        </div>
+        <input type="range" id="sliderA" min="0.2" max="2" step="0.05" value="1">
+      </div>
+
+      <div class="control">
+        <div class="control-label">
+          <span class="name">Freq. angular ω</span>
+          <span class="val mono" id="valW">1.00 rad/s</span>
+        </div>
+        <input type="range" id="sliderW" min="0.2" max="3" step="0.05" value="1">
+      </div>
+
+      <div class="control">
+        <div class="control-label">
+          <span class="name">Fase inicial φ</span>
+          <span class="val mono" id="valPhi">0°</span>
+        </div>
+        <input type="range" id="sliderPhi" min="0" max="360" step="1" value="0">
+      </div>
+
+      <div class="btnrow">
+        <button class="primary" id="btnPlay">Pausar</button>
+        <button id="btnReset">Reiniciar t=0</button>
+      </div>
+
+      <div class="readout mono">
+        <div><span class="k">t</span> <span class="v" id="roT">0.00 s</span></div>
+        <div><span class="k">T</span> <span class="v" id="roPeriod">6.28 s</span></div>
+        <div><span class="k">x(t)</span> <span class="v" id="roX">0.00 m</span></div>
+        <div><span class="k">v(t)</span> <span class="v" id="roV">0.00 m/s</span></div>
+        <div><span class="k">a(t)</span> <span class="v" id="roA">0.00 m/s²</span></div>
+        <div><span class="k">fase</span> <span class="v" id="roPhase">0°</span></div>
+      </div>
+
+      <div class="eqbox">
+        <div class="eqline">x(t) = <span class="num" id="eqXtxt">1.00</span>·cos(<span class="num" id="eqWtxt1">1.00</span>t + <span class="num" id="eqPtxt1">0°</span>)</div>
+        <div class="eqline">v(t) = −<span class="num" id="eqVtxt">1.00</span>·sin(<span class="num" id="eqWtxt2">1.00</span>t + <span class="num" id="eqPtxt2">0°</span>)</div>
+        <div class="eqline">a(t) = −<span class="num" id="eqAtxt">1.00</span>·cos(<span class="num" id="eqWtxt3">1.00</span>t + <span class="num" id="eqPtxt3">0°</span>)</div>
+      </div>
+    </div>
+
+    <div>
+      <div class="stage-top">
+
+        <div class="phasor-box">
+          <h3>Vetor girante</h3>
+          <canvas id="phasorCanvas" width="260" height="260"></canvas>
+          <div class="legend">
+            <span><i style="background:var(--x-color)"></i>projeção = x(t)</span>
+          </div>
+        </div>
+
+        <div class="spring-box">
+          <h3>Sistema massa-mola horizontal</h3>
+          <canvas id="springCanvas" width="700" height="260"></canvas>
+          <div class="legend">
+            <span><i style="background:var(--x-color)"></i>posição do bloco = x(t)</span>
+            <span>linha tracejada = equilíbrio (x=0)</span>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="plots-box" style="margin-top:16px;">
+        <h3>Posição, velocidade e aceleração</h3>
+        <canvas id="plotsCanvas" width="980" height="330"></canvas>
+        <div class="legend">
+          <span><i style="background:var(--x-color)"></i>x(t) — posição</span>
+          <span><i style="background:var(--v-color)"></i>v(t) — velocidade</span>
+          <span><i style="background:var(--a-color)"></i>a(t) — aceleração</span>
+          <span>linhas verticais = múltiplos de T/2</span>
+        </div>
+      </div>
+
+      <div class="panel" style="margin-top:16px;">
+        <h2>O que observar</h2>
+        <div style="font-size:.85rem;line-height:1.55;color:var(--ink-dim)">
+          O ponto no círculo gira com velocidade angular constante ω. Sua projeção horizontal é exatamente x(t); a linha tracejada mostra essa projeção sendo gerada em tempo real no gráfico à direita, e o mesmo valor posiciona o bloco no sistema massa-mola ao lado. φ desloca o ângulo inicial do vetor sem alterar seu raio (A) nem sua velocidade de giro (ω); por isso, mudar φ desloca as três curvas no eixo do tempo sem mudar amplitude ou período. As linhas verticais no gráfico marcam T/2, T, 3T/2, 2T e assim por diante, tornando visível onde cada meio ciclo e cada ciclo completo se fecham. Note que v(t) está sempre 90° adiantada em relação a x(t), e que a(t) está em oposição de fase com x(t), consistente com a = −ω²x. Os pontos onde x = ±A marcam velocidade nula (extremos, mola no máximo de deformação); o ponto x = 0 marca velocidade máxima (passagem pelo equilíbrio, mola relaxada).
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <footer>Simulação de MHS · mola ideal, sem amortecimento · deslocamento relativo à posição de equilíbrio · versão horizontal (a vertical, com o peso deslocando o ponto de equilíbrio, fica para a próxima aula)</footer>
+</div>
+
+<script>
+(function(){
+  const sliderA = document.getElementById('sliderA');
+  const sliderW = document.getElementById('sliderW');
+  const sliderPhi = document.getElementById('sliderPhi');
+  const valA = document.getElementById('valA');
+  const valW = document.getElementById('valW');
+  const valPhi = document.getElementById('valPhi');
+  const btnPlay = document.getElementById('btnPlay');
+  const btnReset = document.getElementById('btnReset');
+
+  const roT = document.getElementById('roT');
+  const roPeriod = document.getElementById('roPeriod');
+  const roX = document.getElementById('roX');
+  const roV = document.getElementById('roV');
+  const roA = document.getElementById('roA');
+  const roPhase = document.getElementById('roPhase');
+
+  const eqXtxt = document.getElementById('eqXtxt');
+  const eqWtxt1 = document.getElementById('eqWtxt1');
+  const eqPtxt1 = document.getElementById('eqPtxt1');
+  const eqVtxt = document.getElementById('eqVtxt');
+  const eqWtxt2 = document.getElementById('eqWtxt2');
+  const eqPtxt2 = document.getElementById('eqPtxt2');
+  const eqAtxt = document.getElementById('eqAtxt');
+  const eqWtxt3 = document.getElementById('eqWtxt3');
+  const eqPtxt3 = document.getElementById('eqPtxt3');
+
+  const phasorCanvas = document.getElementById('phasorCanvas');
+  const pctx = phasorCanvas.getContext('2d');
+  const plotsCanvas = document.getElementById('plotsCanvas');
+  const lctx = plotsCanvas.getContext('2d');
+  const springCanvas = document.getElementById('springCanvas');
+  const sctx = springCanvas.getContext('2d');
+
+  let A = parseFloat(sliderA.value);
+  let W = parseFloat(sliderW.value);
+  let PHI = parseFloat(sliderPhi.value) * Math.PI / 180;
+
+  let t = 0;
+  let playing = true;
+  let lastTs = null;
+
+  const history = []; // {t, x, v, a}
+  const WINDOW = 12; // seconds visible in plots
+
+  function resizeCanvases(){
+    const dpr = window.devicePixelRatio || 1;
+
+    const pRect = phasorCanvas.getBoundingClientRect();
+    phasorCanvas.width = pRect.width * dpr;
+    phasorCanvas.height = pRect.width * dpr; // square
+    phasorCanvas.style.height = pRect.width + 'px';
+    pctx.setTransform(dpr,0,0,dpr,0,0);
+
+    const sRect = springCanvas.getBoundingClientRect();
+    springCanvas.width = sRect.width * dpr;
+    springCanvas.height = 220 * dpr;
+    springCanvas.style.height = '220px';
+    sctx.setTransform(dpr,0,0,dpr,0,0);
+
+    const lRect = plotsCanvas.getBoundingClientRect();
+    plotsCanvas.width = lRect.width * dpr;
+    plotsCanvas.height = 330 * dpr;
+    plotsCanvas.style.height = '330px';
+    lctx.setTransform(dpr,0,0,dpr,0,0);
+  }
+
+  function fmt(n, d){ return n.toFixed(d); }
+
+  function updateLabels(){
+    valA.textContent = fmt(A,2) + ' m';
+    valW.textContent = fmt(W,2) + ' rad/s';
+    let phiDeg = (parseFloat(sliderPhi.value));
+    valPhi.textContent = phiDeg.toFixed(0) + '°';
+    roPeriod.textContent = fmt(2*Math.PI/W,2) + ' s';
+
+    eqXtxt.textContent = fmt(A,2);
+    eqWtxt1.textContent = fmt(W,2);
+    eqPtxt1.textContent = phiDeg.toFixed(0)+'°';
+
+    eqVtxt.textContent = fmt(A*W,2);
+    eqWtxt2.textContent = fmt(W,2);
+    eqPtxt2.textContent = phiDeg.toFixed(0)+'°';
+
+    eqAtxt.textContent = fmt(A*W*W,2);
+    eqWtxt3.textContent = fmt(W,2);
+    eqPtxt3.textContent = phiDeg.toFixed(0)+'°';
+  }
+
+  sliderA.addEventListener('input', ()=>{ A = parseFloat(sliderA.value); updateLabels(); });
+  sliderW.addEventListener('input', ()=>{ W = parseFloat(sliderW.value); updateLabels(); });
+  sliderPhi.addEventListener('input', ()=>{ PHI = parseFloat(sliderPhi.value)*Math.PI/180; updateLabels(); });
+
+  btnPlay.addEventListener('click', ()=>{
+    playing = !playing;
+    btnPlay.textContent = playing ? 'Pausar' : 'Continuar';
+    lastTs = null;
+  });
+
+  btnReset.addEventListener('click', ()=>{
+    t = 0;
+    history.length = 0;
+    lastTs = null;
+  });
+
+  function stateAt(time){
+    const phase = W*time + PHI;
+    const x = A*Math.cos(phase);
+    const v = -A*W*Math.sin(phase);
+    const a = -A*W*W*Math.cos(phase);
+    return {x,v,a,phase};
+  }
+
+  function drawPhasor(){
+    const w = phasorCanvas.getBoundingClientRect().width;
+    const h = w;
+    pctx.clearRect(0,0,w,h);
+
+    const cx = w/2, cy = h/2;
+    const maxR = Math.min(w,h)/2 - 26;
+    const scale = maxR / 2.05; // A max is 2
+
+    pctx.strokeStyle = '#1e2c47';
+    pctx.lineWidth = 1;
+    pctx.beginPath();
+    pctx.arc(cx,cy,2*scale,0,Math.PI*2);
+    pctx.stroke();
+
+    pctx.strokeStyle = '#243456';
+    pctx.beginPath();
+    pctx.moveTo(cx-maxR-10,cy); pctx.lineTo(cx+maxR+10,cy);
+    pctx.moveTo(cx,cy-maxR-10); pctx.lineTo(cx,cy+maxR+10);
+    pctx.stroke();
+
+    const st = stateAt(t);
+    const R = A*scale;
+    const px = cx + R*Math.cos(st.phase);
+    const py = cy - R*Math.sin(st.phase);
+
+    pctx.strokeStyle = '#33456b';
+    pctx.setLineDash([3,4]);
+    pctx.beginPath();
+    pctx.arc(cx,cy,R,0,Math.PI*2);
+    pctx.stroke();
+    pctx.setLineDash([]);
+
+    pctx.strokeStyle = '#8ea1c2';
+    pctx.lineWidth = 2;
+    pctx.beginPath();
+    pctx.moveTo(cx,cy);
+    pctx.lineTo(px,py);
+    pctx.stroke();
+
+    pctx.strokeStyle = '#5eead4';
+    pctx.lineWidth = 1.5;
+    pctx.setLineDash([4,3]);
+    pctx.beginPath();
+    pctx.moveTo(px,py);
+    pctx.lineTo(px,cy);
+    pctx.stroke();
+    pctx.setLineDash([]);
+
+    pctx.fillStyle = '#e7edf7';
+    pctx.beginPath();
+    pctx.arc(px,py,5,0,Math.PI*2);
+    pctx.fill();
+
+    pctx.fillStyle = '#5eead4';
+    pctx.beginPath();
+    pctx.arc(px,cy,5,0,Math.PI*2);
+    pctx.fill();
+
+    pctx.fillStyle = '#59708f';
+    pctx.font = '11px monospace';
+    pctx.fillText('A', cx + R*0.45, cy - 8);
+  }
+
+  function drawSpringZigzag(ctx, x1, y, x2, coils, amp){
+    const len = x2 - x1;
+    if(len <= 4){
+      ctx.lineTo(x2,y);
+      return;
+    }
+    const segs = coils*2;
+    const segLen = len/segs;
+    ctx.lineTo(x1, y);
+    for(let i=1;i<=segs;i++){
+      const xx = x1 + i*segLen;
+      const yy = (i % 2 === 0) ? y : (y + (i%4===1? -amp: amp));
+      ctx.lineTo(xx, yy);
+    }
+  }
+
+  function drawSpring(){
+    const w = springCanvas.getBoundingClientRect().width;
+    const h = 220;
+    sctx.clearRect(0,0,w,h);
+
+    const groundY = h*0.62;
+    const wallX = 26;
+    const equilibriumX = w*0.52;
+    const scale = Math.min(70, (w*0.40)/2.05); // px per meter, keep block off edges
+
+    // wall (hatched)
+    sctx.strokeStyle = '#33456b';
+    sctx.lineWidth = 2;
+    sctx.beginPath();
+    sctx.moveTo(wallX, groundY-70);
+    sctx.lineTo(wallX, groundY+18);
+    sctx.stroke();
+    sctx.lineWidth = 1;
+    for(let yy = groundY-68; yy < groundY+16; yy += 10){
+      sctx.beginPath();
+      sctx.moveTo(wallX, yy);
+      sctx.lineTo(wallX-8, yy+10);
+      sctx.stroke();
+    }
+
+    // ground line
+    sctx.strokeStyle = '#1e2c47';
+    sctx.beginPath();
+    sctx.moveTo(wallX, groundY+18);
+    sctx.lineTo(w-20, groundY+18);
+    sctx.stroke();
+
+    // equilibrium reference (dashed)
+    sctx.strokeStyle = '#33456b';
+    sctx.setLineDash([4,4]);
+    sctx.beginPath();
+    sctx.moveTo(equilibriumX, groundY-80);
+    sctx.lineTo(equilibriumX, groundY+30);
+    sctx.stroke();
+    sctx.setLineDash([]);
+    sctx.fillStyle = '#59708f';
+    sctx.font = '10px monospace';
+    sctx.fillText('x = 0', equilibriumX-14, groundY+44);
+
+    const st = stateAt(t);
+    const blockW = 46, blockH = 46;
+    const blockCenterX = equilibriumX + st.x*scale;
+    const blockLeft = blockCenterX - blockW/2;
+    const blockTop = groundY - blockH;
+
+    // spring from wall to block left face
+    sctx.strokeStyle = '#8ea1c2';
+    sctx.lineWidth = 2;
+    sctx.beginPath();
+    sctx.moveTo(wallX, groundY-26);
+    drawSpringZigzag(sctx, wallX, groundY-26, blockLeft, 9, 10);
+    sctx.stroke();
+
+    // block
+    sctx.fillStyle = '#5eead4';
+    sctx.fillRect(blockLeft, blockTop, blockW, blockH);
+    sctx.strokeStyle = '#06251f';
+    sctx.lineWidth = 1;
+    sctx.strokeRect(blockLeft, blockTop, blockW, blockH);
+    sctx.fillStyle = '#06251f';
+    sctx.font = '600 11px sans-serif';
+    sctx.fillText('m', blockCenterX-4, blockTop+blockH/2+4);
+
+    // x(t) numeric near block
+    sctx.fillStyle = '#e7edf7';
+    sctx.font = '11px monospace';
+    sctx.fillText('x = '+fmt(st.x,2)+' m', blockLeft-6, blockTop-10);
+  }
+
+  function drawPlots(){
+    const w = plotsCanvas.getBoundingClientRect().width;
+    const h = 330;
+    lctx.clearRect(0,0,w,h);
+
+    const marginL = 46, marginR = 14, marginTop = 22;
+    const trackH = (h - marginTop - 10) / 3;
+    const plotW = w - marginL - marginR;
+
+    const tStart = Math.max(0, t - WINDOW);
+    const tEnd = tStart + WINDOW;
+
+    const T = 2*Math.PI/W;
+    const maxX = 2.05, maxV = 2.05*3, maxA = 2.05*3*3;
+
+    // vertical grid lines at multiples of T/2, spanning full plot height
+    lctx.strokeStyle = 'rgba(255,255,255,0.10)';
+    lctx.lineWidth = 1;
+    lctx.font = '10px monospace';
+    let k = Math.max(1, Math.floor(tStart/(T/2)));
+    while(k*(T/2) <= tEnd + 1e-9){
+      const lineT = k*(T/2);
+      if(lineT >= tStart - 1e-9){
+        const xpix = marginL + ((lineT - tStart)/WINDOW)*plotW;
+        lctx.beginPath();
+        lctx.moveTo(xpix, marginTop-6);
+        lctx.lineTo(xpix, h-8);
+        lctx.stroke();
+
+        let label;
+        if(k % 2 === 0){
+          const n = k/2;
+          label = (n===1)? 'T' : n+'T';
+        } else {
+          label = (k===1)? 'T/2' : k+'T/2';
+        }
+        lctx.fillStyle = '#59708f';
+        lctx.fillText(label, xpix+3, marginTop-10);
+      }
+      k++;
+    }
+
+    function trackY(index){ return marginTop + index*trackH; }
+
+    function drawTrack(index, label, color, maxVal, getter, peakVal, peakLabel, unit){
+      const y0 = trackY(index);
+      const yc = y0 + trackH/2;
+      const halfH = trackH/2 - 6;
+
+      lctx.strokeStyle = '#1e2c47';
+      lctx.lineWidth = 1;
+      lctx.beginPath();
+      lctx.moveTo(marginL, yc);
+      lctx.lineTo(marginL+plotW, yc);
+      lctx.stroke();
+
+      lctx.strokeStyle = '#152340';
+      lctx.strokeRect(marginL, y0+2, plotW, trackH-8);
+
+      // dynamic amplitude reference lines: always at the TRUE current peak, regardless of phi
+      const yPeakPos = yc - (peakVal/maxVal)*halfH;
+      const yPeakNeg = yc + (peakVal/maxVal)*halfH;
+      lctx.strokeStyle = color;
+      lctx.globalAlpha = 0.35;
+      lctx.setLineDash([5,4]);
+      lctx.lineWidth = 1;
+      lctx.beginPath();
+      lctx.moveTo(marginL, yPeakPos); lctx.lineTo(marginL+plotW, yPeakPos);
+      lctx.moveTo(marginL, yPeakNeg); lctx.lineTo(marginL+plotW, yPeakNeg);
+      lctx.stroke();
+      lctx.setLineDash([]);
+      lctx.globalAlpha = 1;
+
+      lctx.fillStyle = color;
+      lctx.font = '600 11px sans-serif';
+      lctx.fillText(label, 6, y0+14);
+
+      lctx.fillStyle = '#59708f';
+      lctx.font = '10px monospace';
+      lctx.fillText('+'+peakLabel+' = '+fmt(peakVal,2)+unit, marginL+plotW-118, yPeakPos-4);
+      lctx.fillText('-'+peakLabel, marginL+plotW-118, yPeakNeg+12);
+      lctx.fillText('0', marginL+4, yc+3);
+
+      lctx.strokeStyle = color;
+      lctx.lineWidth = 2;
+      lctx.beginPath();
+      let started = false;
+      for(const pt of history){
+        if(pt.t < tStart) continue;
+        const xpix = marginL + ((pt.t - tStart)/WINDOW)*plotW;
+        const val = getter(pt);
+        const ypix = yc - (val/maxVal)*halfH;
+        if(!started){ lctx.moveTo(xpix,ypix); started=true; }
+        else lctx.lineTo(xpix,ypix);
+      }
+      lctx.stroke();
+
+      const cur = getter(stateAt(t));
+      const xpixCur = marginL + ((t - tStart)/WINDOW)*plotW;
+      const ypixCur = yc - (cur/maxVal)*halfH;
+      lctx.fillStyle = color;
+      lctx.beginPath();
+      lctx.arc(xpixCur, ypixCur, 4,0,Math.PI*2);
+      lctx.fill();
+
+      // mark actual peaks touched inside the visible window (local extrema of the stored curve)
+      lctx.fillStyle = '#e7edf7';
+      for(let i=1;i<history.length-1;i++){
+        const p0=history[i-1], p1=history[i], p2=history[i+1];
+        if(p1.t < tStart || p1.t > tEnd) continue;
+        const v0=getter(p0), v1=getter(p1), v2=getter(p2);
+        const isMax = v1>=v0 && v1>=v2 && v1 > peakVal*0.98;
+        const isMin = v1<=v0 && v1<=v2 && v1 < -peakVal*0.98;
+        if(isMax || isMin){
+          const xpix = marginL + ((p1.t - tStart)/WINDOW)*plotW;
+          const ypix = yc - (v1/maxVal)*halfH;
+          lctx.beginPath();
+          lctx.arc(xpix, ypix, 3, 0, Math.PI*2);
+          lctx.fill();
+        }
+      }
+    }
+
+    drawTrack(0,'x(t)','#5eead4', maxX, p=>p.x, A, 'A', 'm');
+    drawTrack(1,'v(t)','#fbbf24', maxV, p=>p.v, A*W, 'Aω', 'm/s');
+    drawTrack(2,'a(t)','#fb7185', maxA, p=>p.a, A*W*W, 'Aω²', 'm/s²');
+  }
+
+  function updateReadout(){
+    const st = stateAt(t);
+    roT.textContent = fmt(t,2)+' s';
+    roX.textContent = fmt(st.x,3)+' m';
+    roV.textContent = fmt(st.v,3)+' m/s';
+    roA.textContent = fmt(st.a,3)+' m/s²';
+    let phaseDeg = ((st.phase % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI) * 180/Math.PI;
+    roPhase.textContent = fmt(phaseDeg,0)+'°';
+  }
+
+  function loop(ts){
+    if(lastTs===null) lastTs = ts;
+    const dt = (ts - lastTs)/1000;
+    lastTs = ts;
+
+    if(playing){
+      t += dt;
+      const st = stateAt(t);
+      history.push({t, x:st.x, v:st.v, a:st.a});
+      while(history.length && history[0].t < t - WINDOW - 1) history.shift();
+    }
+
+    drawPhasor();
+    drawSpring();
+    drawPlots();
+    updateReadout();
+
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener('resize', resizeCanvases);
+  resizeCanvases();
+  updateLabels();
+  history.push({t:0, x:stateAt(0).x, v:stateAt(0).v, a:stateAt(0).a});
+  requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>
