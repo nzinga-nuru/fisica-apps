@@ -346,6 +346,31 @@
     color:var(--ink-dim);
   }
 
+  .f2-topbar{
+    display:flex;
+    align-items:center;
+    font-size:0.85rem;
+  }
+  .f2-topbar a{
+    color:var(--ink-dim);
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .f2-topbar a:hover{ color:var(--accent); }
+  .f2-topbar a:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
+
+  .f2-nextbar{
+    font-size:0.85rem;
+    text-align:right;
+    padding-top:14px;
+    border-top:1px solid var(--border);
+  }
+  .f2-nextbar a{ color:var(--accent); text-decoration:none; font-weight:600; }
+  .f2-nextbar a:hover{ text-decoration:underline; }
+  .f2-nextbar a:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
+
   @media (prefers-reduced-motion: reduce){
     .play-btn{ scroll-behavior:auto; }
   }
@@ -354,6 +379,8 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 
 <div class="page">
+  <div class="f2-topbar"><a href="../../">← Física II</a></div>
+
   <header>
     <h1>Onda estacionária numa corda</h1>
     <p>Uma corda presa nas duas pontas só vibra em certos modos: os <b>harmônicos</b>. Cada modo é a soma de duas ondas idênticas viajando em sentidos opostos — ligue "mostrar ondas componentes" para ver essa soma acontecendo.</p>
@@ -472,6 +499,8 @@
   </div>
 
   <footer>y(x,t) = A·sen(kx − ωt) + A·sen(kx + ωt) = 2A·sen(kx)·cos(ωt) — a soma de duas ondas viajantes em sentidos opostos.</footer>
+
+  <div class="f2-nextbar"><a href="../batimento/">Próxima simulação: Batimento →</a></div>
 </div>
 
 <script>

@@ -135,10 +135,30 @@
     margin-top:18px;color:var(--ink-dim);font-size:.72rem;
     border-top:1px solid var(--panel-line);padding-top:12px;
   }
+
+  .f2-topbar{
+    display:flex;align-items:center;font-size:.82rem;margin-bottom:14px;
+  }
+  .f2-topbar a{
+    color:var(--ink-dim);text-decoration:none;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .f2-topbar a:hover{color:var(--accent);}
+  .f2-topbar a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px;}
+
+  .f2-nextbar{
+    margin-top:14px;padding-top:14px;border-top:1px solid var(--panel-line);
+    font-size:.85rem;text-align:right;
+  }
+  .f2-nextbar a{color:var(--accent);text-decoration:none;font-weight:600;}
+  .f2-nextbar a:hover{text-decoration:underline;}
+  .f2-nextbar a:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:3px;}
 </style>
 </head>
 <body>
 <div class="wrap">
+
+  <div class="f2-topbar"><a href="../../">← Física II</a></div>
 
   <header>
     <h1>MHS — Círculo de Referência</h1>
@@ -239,6 +259,8 @@
   </div>
 
   <footer>Simulação de MHS · mola ideal, sem amortecimento · deslocamento relativo à posição de equilíbrio · versão horizontal (a vertical, com o peso deslocando o ponto de equilíbrio, fica para a próxima aula)</footer>
+
+  <div class="f2-nextbar"><a href="../modos-vibracionais/">Próxima simulação: Modos vibracionais →</a></div>
 </div>
 
 <script>

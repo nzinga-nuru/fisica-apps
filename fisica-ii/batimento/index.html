@@ -1,0 +1,1027 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Batimento — Afinando por Ouvido</title>
+<style>
+  :root{
+    --bg:#eef2f4;
+    --panel:#ffffff;
+    --ink:#16232e;
+    --ink-dim:#546472;
+    --grid:#d6dee3;
+    --axis:#9fb0bb;
+    --accent:#2f6fe0;
+    --wave1:#2f6fe0;
+    --wave2:#e0762f;
+    --resultant:#c22a63;
+    --border:#d6dee3;
+    --track:#dbe2e6;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e161f;
+      --panel:#141f2b;
+      --ink:#e9eef2;
+      --ink-dim:#93a4b2;
+      --grid:#22323f;
+      --axis:#3a4e5c;
+      --accent:#5f9bff;
+      --wave1:#5f9bff;
+      --wave2:#ff9d5c;
+      --resultant:#ff5c93;
+      --border:#22323f;
+      --track:#1c2833;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e161f;
+    --panel:#141f2b;
+    --ink:#e9eef2;
+    --ink-dim:#93a4b2;
+    --grid:#22323f;
+    --axis:#3a4e5c;
+    --accent:#5f9bff;
+    --wave1:#5f9bff;
+    --wave2:#ff9d5c;
+    --resultant:#ff5c93;
+    --border:#22323f;
+    --track:#1c2833;
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    padding-inline:16px;
+    padding-block:28px;
+    display:flex;
+    justify-content:center;
+  }
+  .page{
+    width:100%;
+    max-width:960px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  header h1{
+    font-family:"Newsreader", Georgia, "Times New Roman", serif;
+    font-weight:600;
+    font-size:clamp(1.6rem, 1.1rem + 2vw, 2.3rem);
+    margin:0 0 6px 0;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:0;
+    color:var(--ink-dim);
+    font-size:0.98rem;
+    max-width:64ch;
+    line-height:1.5;
+  }
+
+  .stage{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  .canvas-wrap{
+    position:relative;
+    width:100%;
+    aspect-ratio: 16 / 6;
+    border-radius:10px;
+    overflow:hidden;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 100% 25%,
+      var(--panel);
+    border:1px solid var(--border);
+  }
+  .canvas-wrap.zoom{ aspect-ratio: 16 / 4; }
+  canvas{
+    display:block;
+    width:100%;
+    height:100%;
+  }
+
+  .zoom-label{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:0.76rem;
+    color:var(--ink-dim);
+    margin:-4px 0 0 2px;
+  }
+
+  .transport{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .play-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    padding:9px 18px;
+    font-size:0.92rem;
+    font-weight:600;
+    font-family:inherit;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .play-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  .play-btn svg{ width:14px; height:14px; }
+
+  .pulse-wrap{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:0.82rem;
+    color:var(--ink-dim);
+    white-space:nowrap;
+  }
+  .pulse-dot{
+    width:16px; height:16px;
+    border-radius:50%;
+    background:var(--resultant);
+    box-shadow:0 0 0 0 var(--resultant);
+    flex-shrink:0;
+  }
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-left:auto;
+    font-size:0.82rem;
+    color:var(--ink-dim);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+  .swatch{ width:16px; height:0; border-top-width:3px; border-top-style:solid; display:inline-block; }
+  .swatch.dashed{ border-top-style:dashed; }
+
+  .panels{
+    display:grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap:16px;
+  }
+  @media (max-width: 640px){
+    .panels{ grid-template-columns: 1fr; }
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:18px 20px;
+  }
+  .panel h2{
+    font-family:"Newsreader", Georgia, serif;
+    font-size:1.02rem;
+    font-weight:600;
+    margin:0 0 14px 0;
+  }
+
+  .control{ margin-bottom:16px; }
+  .control:last-child{ margin-bottom:0; }
+  .control-label{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-size:0.86rem;
+    color:var(--ink-dim);
+    margin-bottom:6px;
+  }
+  .control-label b{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    color:var(--ink);
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+  }
+  input[type="range"]{
+    -webkit-appearance:none;
+    width:100%;
+    height:4px;
+    border-radius:999px;
+    background:var(--track);
+    outline-offset:4px;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:17px; height:17px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid var(--panel);
+    box-shadow:0 0 0 1px var(--accent);
+    cursor:pointer;
+    margin-top:-6.5px;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:15px; height:15px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid var(--panel);
+    box-shadow:0 0 0 1px var(--accent);
+    cursor:pointer;
+  }
+  input[type="range"]::-moz-range-track{
+    height:4px; border-radius:999px; background:var(--track);
+  }
+
+  .fixed-readout{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    background:var(--track);
+    border-radius:10px;
+    padding:9px 12px;
+    font-size:0.86rem;
+    color:var(--ink-dim);
+  }
+  .fixed-readout b{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    color:var(--ink);
+    font-size:0.98rem;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .nudge-row{
+    display:flex;
+    gap:8px;
+  }
+  .nudge-btn{
+    flex:1;
+    background:var(--track);
+    color:var(--ink);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px 10px;
+    font-size:0.84rem;
+    font-family:inherit;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .nudge-btn:hover{ border-color:var(--accent); }
+  .nudge-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding-block:9px;
+    border-top:1px solid var(--border);
+    margin-top:9px;
+  }
+  .toggle-row label{ font-size:0.9rem; cursor:pointer; }
+  .toggle-row .hint{ display:block; font-size:0.78rem; color:var(--ink-dim); margin-top:2px; }
+
+  .switch{
+    position:relative;
+    width:38px; height:22px;
+    flex-shrink:0;
+  }
+  .switch input{
+    position:absolute; inset:0; opacity:0; margin:0; cursor:pointer; z-index:1;
+  }
+  .switch .track{
+    position:absolute; inset:0;
+    background:var(--track);
+    border-radius:999px;
+    transition:background .15s ease;
+  }
+  .switch .thumb{
+    position:absolute; top:3px; left:3px;
+    width:16px; height:16px;
+    border-radius:50%;
+    background:var(--panel);
+    box-shadow:0 1px 2px rgba(0,0,0,.25);
+    transition:transform .15s ease;
+  }
+  .switch input:checked + .track{ background:var(--accent); }
+  .switch input:checked ~ .thumb{ transform:translateX(16px); }
+  .switch input:focus-visible ~ .track{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .formula{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:0.98rem;
+    background:var(--track);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-bottom:14px;
+    overflow-x:auto;
+    font-variant-numeric:tabular-nums;
+  }
+  .readout-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 16px;
+  }
+  .readout-grid dt{
+    font-size:0.78rem;
+    color:var(--ink-dim);
+    margin:0;
+  }
+  .readout-grid dd{
+    margin:2px 0 0 0;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:0.98rem;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .story{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid var(--border);
+    font-size:0.84rem;
+    line-height:1.55;
+    color:var(--ink-dim);
+  }
+  .story b{ color:var(--ink); }
+
+  footer{
+    text-align:center;
+    font-size:0.78rem;
+    color:var(--ink-dim);
+  }
+
+  .f2-topbar{
+    display:flex;
+    align-items:center;
+    font-size:0.85rem;
+  }
+  .f2-topbar a{
+    color:var(--ink-dim);
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .f2-topbar a:hover{ color:var(--accent); }
+  .f2-topbar a:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
+
+  .f2-nextbar{
+    font-size:0.85rem;
+    text-align:right;
+    padding-top:14px;
+    border-top:1px solid var(--border);
+  }
+  .f2-nextbar a{ color:var(--accent); text-decoration:none; font-weight:600; }
+  .f2-nextbar a:hover{ text-decoration:underline; }
+  .f2-nextbar a:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .play-btn{ scroll-behavior:auto; }
+  }
+</style>
+
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<div class="page">
+  <div class="f2-topbar"><a href="../../">← Física II</a></div>
+
+  <header>
+    <h1>Batimento — afinando por ouvido</h1>
+    <p>Um diapasão de <b>440&nbsp;Hz</b> soa junto com uma corda de frequência próxima. As duas ondas se somam no ar e criam um "pulsar" de intensidade — o batimento. Aperte <b>Tocar som</b> e ajuste a corda até o pulsar sumir.</p>
+  </header>
+
+  <div class="stage">
+    <div class="canvas-wrap zoom">
+      <canvas id="cvZoom" role="img" aria-label="Zoom nas ondas de pressão em alguns milissegundos"></canvas>
+    </div>
+    <div class="zoom-label">onda de pressão real, ~40&nbsp;ms de zoom — é isto que o ar realmente faz</div>
+
+    <div class="canvas-wrap">
+      <canvas id="cvEnv" role="img" aria-label="Envoltória de amplitude ao longo do tempo"></canvas>
+    </div>
+    <div class="zoom-label">envoltória de amplitude, alguns segundos — é isto que você <i>ouve</i> como pulsar</div>
+
+    <div class="transport">
+      <button class="play-btn" id="playBtn" type="button">
+        <svg id="playIcon" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5-9-5.5z"/></svg>
+        <svg id="pauseIcon" viewBox="0 0 16 16" fill="currentColor" hidden><path d="M4 2.5h3v11H4v-11zM9 2.5h3v11H9v-11z"/></svg>
+        <span id="playLabel">Tocar som</span>
+      </button>
+
+      <button class="play-btn" id="pauseBtn" type="button" style="background:var(--track); color:var(--ink);">
+        <svg id="freezeIcon" viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5h3v11H4v-11zM9 2.5h3v11H9v-11z"/></svg>
+        <svg id="resumeIcon" viewBox="0 0 16 16" fill="currentColor" hidden><path d="M4 2.5v11l9-5.5-9-5.5z"/></svg>
+        <span id="pauseLabel">Pausar animação</span>
+      </button>
+
+      <span class="pulse-wrap"><span class="pulse-dot" id="pulseDot"></span>batendo agora</span>
+
+      <div class="legend">
+        <span><i class="swatch" style="border-color:var(--wave1)"></i>diapasão (f₁)</span>
+        <span><i class="swatch" style="border-color:var(--wave2)"></i>corda (f₂)</span>
+        <span><i class="swatch" style="border-color:var(--resultant)"></i>soma</span>
+        <span><i class="swatch dashed" style="border-color:var(--resultant)"></i>envoltória</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stage">
+    <h2 style="font-family:'Newsreader',Georgia,serif;font-size:1.05rem;font-weight:600;margin:0;">Diagrama clássico, como no livro</h2>
+    <p style="margin:0;color:var(--ink-dim);font-size:0.86rem;line-height:1.5;max-width:66ch;">
+      Frequências ilustrativas (mais lentas que o som real) só pra deixar os ciclos visíveis num intervalo de 1&nbsp;segundo — o número de batimentos por segundo continua sendo exatamente o f_bat da simulação. Use <b>Pausar animação</b> acima pra congelar num instante bom e apontar as duas ondas.
+    </p>
+
+    <div class="canvas-wrap" style="aspect-ratio:16/5;">
+      <canvas id="cvBookA" role="img" aria-label="Duas ondas de frequências próximas, entrando e saindo de fase"></canvas>
+    </div>
+    <div class="zoom-label">(a) as duas ondas — linhas tracejadas marcam onde ficam em fase e fora de fase</div>
+
+    <div class="canvas-wrap" style="aspect-ratio:16/5;">
+      <canvas id="cvBookB" role="img" aria-label="Onda resultante do batimento"></canvas>
+    </div>
+    <div class="zoom-label">(b) batimento — a onda resultante: intensidade sobe e desce no ritmo de f_bat</div>
+  </div>
+
+  <div class="panels">
+    <div class="panel">
+      <h2>Controles</h2>
+
+      <div class="control">
+        <div class="control-label"><span>Diapasão f₁ (padrão)</span></div>
+        <div class="fixed-readout"><span>referência fixa</span><b>440,00 Hz</b></div>
+      </div>
+
+      <div class="control">
+        <div class="control-label"><span>Corda f₂</span><b id="f2Val">437,0 Hz</b></div>
+        <input type="range" id="f2Slider" min="425" max="455" step="0.5" value="437" aria-label="Frequência da corda">
+        <div class="nudge-row" style="margin-top:8px;">
+          <button class="nudge-btn" id="looseBtn" type="button">− Afrouxar</button>
+          <button class="nudge-btn" id="tightBtn" type="button">+ Apertar</button>
+        </div>
+      </div>
+
+      <div class="control">
+        <div class="control-label"><span>Volume</span><b id="volVal">50%</b></div>
+        <input type="range" id="volSlider" min="0" max="100" step="1" value="50" aria-label="Volume">
+      </div>
+
+      <div class="toggle-row">
+        <div>
+          <label for="toggleComponents">Mostrar f₁ e f₂ separadas</label>
+          <span class="hint">no zoom, além da soma das duas ondas</span>
+        </div>
+        <span class="switch">
+          <input type="checkbox" id="toggleComponents" checked>
+          <span class="track"></span><span class="thumb"></span>
+        </span>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>O que está acontecendo</h2>
+      <div class="formula" id="formulaBox">f_bat = |f₁ − f₂|</div>
+      <dl class="readout-grid">
+        <div><dt>Frequência média (tom ouvido)</dt><dd id="outFmed">438,50 Hz</dd></div>
+        <div><dt>Frequência de batimento</dt><dd id="outFbat">3,00 Hz</dd></div>
+        <div><dt>Período entre pulsos</dt><dd id="outTbat">0,333 s</dd></div>
+        <div><dt>Diferença de f₂ p/ 440&nbsp;Hz</dt><dd id="outDelta">−3,00 Hz</dd></div>
+      </dl>
+      <div class="story">
+        No problema do afinador: diapasão a 440&nbsp;Hz e corda a 437&nbsp;Hz batem 3 vezes por segundo. <b>Apertando a corda</b> (aumentando a tensão), f₂ sobe e se aproxima de 440&nbsp;Hz — o batimento cai pra 1&nbsp;Hz. Quando o pulsar desaparece de vez, a corda está afinada.
+      </div>
+    </div>
+  </div>
+
+  <footer>p(t) = p₀cos(2πf₁t) + p₀cos(2πf₂t) = 2p₀cos(π·Δf·t)·cos(2πf_méd·t) — o batimento é interferência no tempo, não no espaço.</footer>
+
+  <div class="f2-nextbar"><a href="../mhs/">Próxima simulação: MHS →</a></div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  var cvZoom = document.getElementById("cvZoom");
+  var cvEnv = document.getElementById("cvEnv");
+  var ctxZoom = cvZoom.getContext("2d");
+  var ctxEnv = cvEnv.getContext("2d");
+
+  var cvBookA = document.getElementById("cvBookA");
+  var cvBookB = document.getElementById("cvBookB");
+  var ctxBookA = cvBookA.getContext("2d");
+  var ctxBookB = cvBookB.getContext("2d");
+
+  var pauseBtn = document.getElementById("pauseBtn");
+  var freezeIcon = document.getElementById("freezeIcon");
+  var resumeIcon = document.getElementById("resumeIcon");
+  var pauseLabel = document.getElementById("pauseLabel");
+
+  var f2Slider = document.getElementById("f2Slider");
+  var f2Val = document.getElementById("f2Val");
+  var volSlider = document.getElementById("volSlider");
+  var volVal = document.getElementById("volVal");
+  var toggleComponents = document.getElementById("toggleComponents");
+  var looseBtn = document.getElementById("looseBtn");
+  var tightBtn = document.getElementById("tightBtn");
+  var playBtn = document.getElementById("playBtn");
+  var playIcon = document.getElementById("playIcon");
+  var pauseIcon = document.getElementById("pauseIcon");
+  var playLabel = document.getElementById("playLabel");
+  var pulseDot = document.getElementById("pulseDot");
+
+  var outFmed = document.getElementById("outFmed");
+  var outFbat = document.getElementById("outFbat");
+  var outTbat = document.getElementById("outTbat");
+  var outDelta = document.getElementById("outDelta");
+
+  var F1 = 440;
+  var state = {
+    f2: parseFloat(f2Slider.value),
+    volume: parseFloat(volSlider.value) / 100,
+    showComponents: true,
+    playing: false,
+    animPlaying: true,
+    t: 0
+  };
+
+  var BOOK_CARRIER = 20; // Hz ilustrativo — só pra caber ciclos visíveis em 1s
+
+  function fmt(x, d){
+    return x.toLocaleString("pt-BR", {minimumFractionDigits:d, maximumFractionDigits:d});
+  }
+
+  function readCSSVar(name){
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function updateReadouts(){
+    var fbat = Math.abs(F1 - state.f2);
+    var fmed = (F1 + state.f2) / 2;
+    f2Val.textContent = fmt(state.f2, 1) + " Hz";
+    volVal.textContent = Math.round(state.volume * 100) + "%";
+    outFmed.textContent = fmt(fmed, 2) + " Hz";
+    outFbat.textContent = fmt(fbat, 2) + " Hz";
+    outTbat.textContent = fbat > 0.001 ? fmt(1 / fbat, 3) + " s" : "—";
+    var delta = state.f2 - F1;
+    outDelta.textContent = (delta >= 0 ? "+" : "−") + fmt(Math.abs(delta), 2) + " Hz";
+  }
+
+  // ---------------- Áudio ----------------
+  var audioCtx = null, osc1 = null, osc2 = null, gain1 = null, gain2 = null, masterGain = null;
+
+  function ensureAudio(){
+    if (audioCtx) return;
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0;
+    masterGain.connect(audioCtx.destination);
+
+    osc1 = audioCtx.createOscillator();
+    osc1.type = "sine";
+    osc1.frequency.value = F1;
+    gain1 = audioCtx.createGain();
+    gain1.gain.value = 0.5;
+    osc1.connect(gain1).connect(masterGain);
+
+    osc2 = audioCtx.createOscillator();
+    osc2.type = "sine";
+    osc2.frequency.value = state.f2;
+    gain2 = audioCtx.createGain();
+    gain2.gain.value = 0.5;
+    osc2.connect(gain2).connect(masterGain);
+
+    osc1.start();
+    osc2.start();
+  }
+
+  function targetGain(){
+    return state.volume * 0.35;
+  }
+
+  function setPlaying(v){
+    state.playing = v;
+    if (v){
+      ensureAudio();
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+      masterGain.gain.setTargetAtTime(targetGain(), audioCtx.currentTime, 0.08);
+    } else if (audioCtx){
+      masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+      masterGain.gain.setTargetAtTime(0, audioCtx.currentTime, 0.08);
+    }
+    playIcon.hidden = v;
+    pauseIcon.hidden = !v;
+    playLabel.textContent = v ? "Parar som" : "Tocar som";
+  }
+
+  playBtn.addEventListener("click", function(){ setPlaying(!state.playing); });
+
+  function setAnimPlaying(v){
+    state.animPlaying = v;
+    freezeIcon.hidden = !v;
+    resumeIcon.hidden = v;
+    pauseLabel.textContent = v ? "Pausar animação" : "Continuar animação";
+  }
+  pauseBtn.addEventListener("click", function(){ setAnimPlaying(!state.animPlaying); });
+
+  f2Slider.addEventListener("input", function(){
+    state.f2 = parseFloat(f2Slider.value);
+    updateReadouts();
+    if (osc2 && audioCtx) osc2.frequency.setTargetAtTime(state.f2, audioCtx.currentTime, 0.03);
+  });
+
+  function nudge(delta){
+    var v = Math.min(parseFloat(f2Slider.max), Math.max(parseFloat(f2Slider.min), state.f2 + delta));
+    f2Slider.value = v;
+    state.f2 = v;
+    updateReadouts();
+    if (osc2 && audioCtx) osc2.frequency.setTargetAtTime(state.f2, audioCtx.currentTime, 0.03);
+  }
+  looseBtn.addEventListener("click", function(){ nudge(-0.5); });
+  tightBtn.addEventListener("click", function(){ nudge(0.5); });
+
+  volSlider.addEventListener("input", function(){
+    state.volume = parseFloat(volSlider.value) / 100;
+    updateReadouts();
+    if (state.playing && audioCtx){
+      masterGain.gain.cancelScheduledValues(audioCtx.currentTime);
+      masterGain.gain.setTargetAtTime(targetGain(), audioCtx.currentTime, 0.05);
+    }
+  });
+
+  toggleComponents.addEventListener("change", function(){
+    state.showComponents = toggleComponents.checked;
+  });
+
+  // ---------------- Visualização ----------------
+  var WZ = 0, HZ = 0, DPRZ = 1;
+  var WE = 0, HE = 0, DPRE = 1;
+  var WBA = 0, HBA = 0, DPRBA = 1;
+  var WBB = 0, HBB = 0, DPRBB = 1;
+
+  function fitCanvas(canvas, ctx){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    var r = canvas.getBoundingClientRect();
+    var w = Math.max(1, Math.round(r.width));
+    var h = Math.max(1, Math.round(r.height));
+    canvas.width = Math.round(w * dpr);
+    canvas.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return {w: w, h: h};
+  }
+
+  function resize(){
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    var rz = cvZoom.getBoundingClientRect();
+    DPRZ = dpr;
+    WZ = Math.max(1, Math.round(rz.width));
+    HZ = Math.max(1, Math.round(rz.height));
+    cvZoom.width = Math.round(WZ * DPRZ);
+    cvZoom.height = Math.round(HZ * DPRZ);
+    ctxZoom.setTransform(DPRZ, 0, 0, DPRZ, 0, 0);
+
+    var re = cvEnv.getBoundingClientRect();
+    DPRE = dpr;
+    WE = Math.max(1, Math.round(re.width));
+    HE = Math.max(1, Math.round(re.height));
+    cvEnv.width = Math.round(WE * DPRE);
+    cvEnv.height = Math.round(HE * DPRE);
+    ctxEnv.setTransform(DPRE, 0, 0, DPRE, 0, 0);
+
+    var dimsA = fitCanvas(cvBookA, ctxBookA);
+    WBA = dimsA.w; HBA = dimsA.h;
+    var dimsB = fitCanvas(cvBookB, ctxBookB);
+    WBB = dimsB.w; HBB = dimsB.h;
+  }
+
+  function envelope(t){
+    // E(t) = 2 cos(pi * deltaF * t), deltaF = f1 - f2
+    var deltaF = F1 - state.f2;
+    return 2 * Math.cos(Math.PI * deltaF * t);
+  }
+
+  function drawZoom(){
+    var ctx = ctxZoom, w = WZ, h = HZ;
+    ctx.clearRect(0, 0, w, h);
+
+    var window_s = 0.04; // 40 ms
+    var t0 = state.t;
+    var marginL = 6, marginR = 6;
+    var plotW = w - marginL - marginR;
+    var yc = h / 2;
+    var scaleY = (h / 2 - 10) / 2.4; // p1+p2 max amplitude ~2
+
+    var axis = readCSSVar("--axis");
+    ctx.strokeStyle = axis;
+    ctx.globalAlpha = 0.5;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(marginL, yc); ctx.lineTo(w - marginR, yc);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    function plot(fn, color, lw){
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lw;
+      ctx.beginPath();
+      var N = 400;
+      for (var i = 0; i <= N; i++){
+        var tt = t0 + (i / N) * window_s;
+        var val = fn(tt);
+        var x = marginL + (i / N) * plotW;
+        var y = yc - val * scaleY;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    // soma sempre desenhada primeiro — mais fina/apagada quando as componentes
+    // estão visíveis, cheia quando é a única curva (assim o toggle sempre muda
+    // algo visível, em vez de esconder linhas finas atrás de uma grossa)
+    ctx.globalAlpha = state.showComponents ? 0.45 : 1;
+    plot(function(tt){
+      return Math.cos(2 * Math.PI * F1 * tt) + Math.cos(2 * Math.PI * state.f2 * tt);
+    }, readCSSVar("--resultant"), state.showComponents ? 1.5 : 2);
+    ctx.globalAlpha = 1;
+
+    if (state.showComponents){
+      plot(function(tt){ return Math.cos(2 * Math.PI * F1 * tt); }, readCSSVar("--wave1"), 1.6);
+      plot(function(tt){ return Math.cos(2 * Math.PI * state.f2 * tt); }, readCSSVar("--wave2"), 1.6);
+    }
+  }
+
+  function drawEnv(){
+    var ctx = ctxEnv, w = WE, h = HE;
+    ctx.clearRect(0, 0, w, h);
+
+    var window_s = 6;
+    var marginL = 6, marginR = 6;
+    var plotW = w - marginL - marginR;
+    var yc = h / 2;
+    var scaleY = (h / 2 - 10) / 2.15;
+
+    var t0 = Math.max(0, state.t - window_s);
+
+    var axis = readCSSVar("--axis");
+    ctx.strokeStyle = axis;
+    ctx.globalAlpha = 0.5;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(marginL, yc); ctx.lineTo(w - marginR, yc);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    // envoltória tracejada (+E e -E)
+    ctx.strokeStyle = readCSSVar("--resultant");
+    ctx.globalAlpha = 0.55;
+    ctx.setLineDash([5, 4]);
+    ctx.lineWidth = 1.3;
+    [1, -1].forEach(function(sign){
+      ctx.beginPath();
+      var N = 400;
+      for (var i = 0; i <= N; i++){
+        var tt = t0 + (i / N) * window_s;
+        var val = sign * envelope(tt);
+        var x = marginL + (i / N) * plotW;
+        var y = yc - val * scaleY;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+
+    // curva "audível": volume percebido = |E(t)|, preenchida (o carrier em si é rápido
+    // demais pra caber numa janela de segundos — ele está no gráfico de zoom acima)
+    ctx.fillStyle = readCSSVar("--resultant");
+    ctx.globalAlpha = 0.18;
+    ctx.beginPath();
+    var N2 = 500;
+    for (var j = 0; j <= N2; j++){
+      var ttj = t0 + (j / N2) * window_s;
+      var val2 = Math.abs(envelope(ttj));
+      var xj = marginL + (j / N2) * plotW;
+      var yj = yc - val2 * scaleY;
+      if (j === 0) ctx.moveTo(xj, yc);
+      ctx.lineTo(xj, yj);
+    }
+    ctx.lineTo(marginL + plotW, yc);
+    ctx.closePath();
+    ctx.fill();
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = readCSSVar("--resultant");
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    for (var j2 = 0; j2 <= N2; j2++){
+      var ttj2 = t0 + (j2 / N2) * window_s;
+      var val3 = Math.abs(envelope(ttj2));
+      var xj2 = marginL + (j2 / N2) * plotW;
+      var yj2 = yc - val3 * scaleY;
+      if (j2 === 0) ctx.moveTo(xj2, yj2); else ctx.lineTo(xj2, yj2);
+    }
+    ctx.stroke();
+
+    // marcador do instante atual
+    var curEnv = Math.abs(envelope(state.t));
+    ctx.fillStyle = readCSSVar("--resultant");
+    ctx.beginPath();
+    ctx.arc(w - marginR, yc - curEnv * scaleY, 3.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function bookFreqs(){
+    var fbat = Math.abs(F1 - state.f2);
+    return { f1: BOOK_CARRIER + fbat / 2, f2: BOOK_CARRIER - fbat / 2, fbat: fbat };
+  }
+
+  function drawBookA(){
+    var ctx = ctxBookA, w = WBA, h = HBA;
+    ctx.clearRect(0, 0, w, h);
+
+    var bf = bookFreqs();
+    var window_s = 1.0;
+    var t0 = Math.max(0, state.t - window_s);
+    var marginL = 8, marginR = 8, marginTop = 10, marginBottom = 10;
+    var plotW = w - marginL - marginR;
+    var yc = marginTop + (h - marginTop - marginBottom) / 2;
+    var scaleY = (h - marginTop - marginBottom) / 2 - 4;
+
+    ctx.strokeStyle = readCSSVar("--axis");
+    ctx.globalAlpha = 0.5;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(marginL, yc); ctx.lineTo(w - marginR, yc);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    if (bf.fbat > 0.001){
+      var beatT = 1 / bf.fbat;
+      ctx.strokeStyle = readCSSVar("--ink-dim");
+      ctx.globalAlpha = 0.35;
+      ctx.setLineDash([3, 3]);
+      ctx.lineWidth = 1;
+      var guard = 0;
+      var k = Math.ceil(t0 / beatT);
+      while (k * beatT <= t0 + window_s && guard < 200){
+        var tk = k * beatT;
+        if (tk >= t0){
+          var xk = marginL + ((tk - t0) / window_s) * plotW;
+          ctx.beginPath(); ctx.moveTo(xk, marginTop); ctx.lineTo(xk, h - marginBottom); ctx.stroke();
+        }
+        k++; guard++;
+      }
+      var n = Math.ceil(t0 / beatT - 0.5);
+      guard = 0;
+      while ((n + 0.5) * beatT <= t0 + window_s && guard < 200){
+        var tn = (n + 0.5) * beatT;
+        if (tn >= t0){
+          var xn = marginL + ((tn - t0) / window_s) * plotW;
+          ctx.beginPath(); ctx.moveTo(xn, marginTop); ctx.lineTo(xn, h - marginBottom); ctx.stroke();
+        }
+        n++; guard++;
+      }
+      ctx.setLineDash([]);
+      ctx.globalAlpha = 1;
+    }
+
+    function plot(fn, color, lw){
+      ctx.strokeStyle = color;
+      ctx.lineWidth = lw;
+      ctx.beginPath();
+      var N = 600;
+      for (var i = 0; i <= N; i++){
+        var tt = t0 + (i / N) * window_s;
+        var val = fn(tt);
+        var x = marginL + (i / N) * plotW;
+        var y = yc - val * scaleY;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    plot(function(tt){ return Math.sin(2 * Math.PI * bf.f1 * tt); }, readCSSVar("--wave1"), 1.5);
+    plot(function(tt){ return Math.sin(2 * Math.PI * bf.f2 * tt); }, readCSSVar("--wave2"), 1.5);
+  }
+
+  function drawBookB(){
+    var ctx = ctxBookB, w = WBB, h = HBB;
+    ctx.clearRect(0, 0, w, h);
+
+    var bf = bookFreqs();
+    var window_s = 1.0;
+    var t0 = Math.max(0, state.t - window_s);
+    var marginL = 8, marginR = 8, marginTop = 10, marginBottom = 24;
+    var plotW = w - marginL - marginR;
+    var yc = marginTop + (h - marginTop - marginBottom) / 2;
+    var scaleY = ((h - marginTop - marginBottom) / 2 - 4) / 2.1;
+
+    ctx.strokeStyle = readCSSVar("--axis");
+    ctx.globalAlpha = 0.5;
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(marginL, yc); ctx.lineTo(w - marginR, yc);
+    ctx.stroke();
+    ctx.globalAlpha = 1;
+
+    function E(t){ return 2 * Math.cos(Math.PI * bf.fbat * t); }
+
+    ctx.strokeStyle = readCSSVar("--resultant");
+    ctx.globalAlpha = 0.4;
+    ctx.setLineDash([4, 4]);
+    ctx.lineWidth = 1;
+    [1, -1].forEach(function(sign){
+      ctx.beginPath();
+      var N = 300;
+      for (var i = 0; i <= N; i++){
+        var tt = t0 + (i / N) * window_s;
+        var val = sign * E(tt);
+        var x = marginL + (i / N) * plotW;
+        var y = yc - val * scaleY;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    });
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+
+    ctx.strokeStyle = readCSSVar("--resultant");
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    var N2 = 700;
+    for (var j = 0; j <= N2; j++){
+      var ttj = t0 + (j / N2) * window_s;
+      var val2 = Math.sin(2 * Math.PI * bf.f1 * ttj) + Math.sin(2 * Math.PI * bf.f2 * ttj);
+      var xj = marginL + (j / N2) * plotW;
+      var yj = yc - val2 * scaleY;
+      if (j === 0) ctx.moveTo(xj, yj); else ctx.lineTo(xj, yj);
+    }
+    ctx.stroke();
+
+    if (bf.fbat > 0.001){
+      var beatT = 1 / bf.fbat;
+      ctx.strokeStyle = readCSSVar("--ink-dim");
+      ctx.fillStyle = readCSSVar("--ink-dim");
+      ctx.font = "10px 'IBM Plex Mono', ui-monospace, monospace";
+      ctx.lineWidth = 1;
+      ctx.globalAlpha = 0.75;
+      var n = Math.ceil(t0 / beatT - 0.5);
+      var guard = 0;
+      while (guard < 100){
+        var segStart = (n + 0.5) * beatT;
+        var segEnd = (n + 1.5) * beatT;
+        if (segEnd > t0 + window_s) break;
+        if (segStart >= t0){
+          var xStart = marginL + ((segStart - t0) / window_s) * plotW;
+          var xEnd = marginL + ((segEnd - t0) / window_s) * plotW;
+          var yB = h - marginBottom + 6;
+          ctx.beginPath();
+          ctx.moveTo(xStart, yB - 4); ctx.lineTo(xStart, yB);
+          ctx.lineTo(xEnd, yB); ctx.lineTo(xEnd, yB - 4);
+          ctx.stroke();
+          ctx.textAlign = "center";
+          ctx.fillText("Batimento", (xStart + xEnd) / 2, yB + 11);
+          ctx.textAlign = "left";
+        }
+        n++; guard++;
+      }
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function updatePulse(){
+    var e = Math.abs(envelope(state.t)) / 2; // 0..1
+    var glow = Math.pow(e, 1.5);
+    pulseDot.style.opacity = (0.25 + 0.75 * glow).toFixed(2);
+    pulseDot.style.transform = "scale(" + (0.7 + 0.5 * glow).toFixed(2) + ")";
+    pulseDot.style.boxShadow = "0 0 " + (4 + 14 * glow).toFixed(0) + "px 0 var(--resultant)";
+  }
+
+  var lastTs = null;
+  function loop(ts){
+    if (lastTs === null) lastTs = ts;
+    var dt = (ts - lastTs) / 1000;
+    lastTs = ts;
+    if (state.animPlaying) state.t += dt;
+
+    drawZoom();
+    drawEnv();
+    drawBookA();
+    drawBookB();
+    updatePulse();
+
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener("resize", resize);
+  resize();
+  updateReadouts();
+  requestAnimationFrame(loop);
+
+})();
+</script>
+</body></html>
