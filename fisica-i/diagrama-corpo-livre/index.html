@@ -54,11 +54,12 @@
   svg.cena{width:100%;height:auto;display:block;background:#0c1626;border-radius:8px}
   .frow{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
   .frow .nome{font-weight:600}
-  .frow .ctl{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr 3.4em;gap:4px 8px;align-items:center;font-size:.85rem;color:var(--dim)}
+  .frow .ctl{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr 5.4em;gap:4px 8px;align-items:center;font-size:.85rem;color:var(--dim)}
   .frow input[type=range]{padding:0}
   .pal button{min-width:0;text-align:left}
   .rem{min-height:36px!important;padding:2px 10px}
   .dado{margin:.2rem 0;color:var(--ink)} .dado b{color:var(--w)}
+  input.num{width:5.2em;padding:5px 6px}
   ul.fb{margin:.4rem 0 0;padding-left:1.1rem} ul.fb li{margin:.2rem 0}
 </style>
 </head>
@@ -79,7 +80,7 @@
       </div>
       <div class="panel" style="margin-top:14px">
         <h2>Seu diagrama (só o corpo, só as forças que agem nele)</h2>
-        <svg class="cena" id="dcl" viewBox="0 0 400 400" role="img" aria-label="Área do diagrama de corpo livre: ângulo 0 graus é para a direita, 90 para cima"></svg>
+        <svg class="cena" id="dcl" viewBox="0 0 480 480" role="img" aria-label="Área do diagrama de corpo livre: ângulo 0 graus é para a direita, 90 para cima"></svg>
         <p class="hint">Ângulo: 0° = direita, 90° = cima, 180° = esquerda, 270° = baixo. Tamanho da seta = intensidade da força.</p>
       </div>
     </div>
@@ -93,6 +94,7 @@
         <div class="row" style="margin-top:10px">
           <button class="prim" id="bConf">Conferir</button>
           <button id="bProx" disabled>Próxima situação →</button>
+          <button id="bVar" disabled>Outra variação</button>
         </div>
         <div class="msg" id="msg" role="status" aria-live="polite">Pense antes: quem está empurrando ou puxando o corpo? Só entra força que tem um autor.</div>
       </div>
@@ -122,65 +124,170 @@
 <script>
 const params=new URLSearchParams(location.search);
 const COLETOR_URL=params.get('coletor')||'';
-const APP_ID='F1-dcl-v1';
+const APP_ID='F1-dcl-v2';
 const $=id=>document.getElementById(id);
 const rad=d=>d*Math.PI/180;
 const dif=(a,b)=>{let d=Math.abs(a-b)%360;return d>180?360-d:d};
+const f1=x=>String(x).replace('.',',');
 
-// ---- forças disponíveis (as 3 últimas são "armadilhas" que diagnosticam concepções erradas) ----
+// ---- forças disponíveis. "armadilha": só entram se a situação pedir (senão viram erro com aviso próprio) ----
 const FORCAS={
   Fg:{nome:'Peso',sim:'F',sub:'g',cor:'#fbbf24'},
   N:{nome:'Normal',sim:'N',sub:'',cor:'#5eead4'},
   f:{nome:'Atrito',sim:'f',sub:'',cor:'#fb7185'},
-  T:{nome:'Tensão',sim:'T',sub:'',cor:'#7FB2E5'},
-  mov:{nome:'Força do movimento',sim:'F',sub:'mov',cor:'#95A8C0',armadilha:true},
-  ine:{nome:'Força da inércia',sim:'F',sub:'in',cor:'#95A8C0',armadilha:true},
-  ar:{nome:'Força do ar',sim:'F',sub:'ar',cor:'#95A8C0'}
+  T:{nome:'Tensão (fio ou corda)',sim:'T',sub:'',cor:'#7FB2E5'},
+  T2:{nome:'Tensão do 2º fio',sim:'T',sub:'2',cor:'#9CC5EE',extra:true},
+  E:{nome:'Empuxo',sim:'E',sub:'',cor:'#86efac'},
+  R:{nome:'Arrasto do fluido',sim:'R',sub:'',cor:'#f0abfc'},
+  ar:{nome:'Resistência do ar',sim:'F',sub:'ar',cor:'#f0abfc'},
+  Fap:{nome:'Força aplicada (mão)',sim:'F',sub:'ap',cor:'#fdba74'},
+  ine:{nome:'Força fictícia (−m a)',sim:'F',sub:'fic',cor:'#c4b5fd'},
+  cf:{nome:'Força centrífuga',sim:'F',sub:'cf',cor:'#95A8C0'},
+  mov:{nome:'Força do movimento',sim:'F',sub:'mov',cor:'#95A8C0'}
 };
-// ---- situações. esp: forças esperadas {ang, rel = intensidade / intensidade do peso} ----
+const AVISO_PADRAO={
+  mov:'Não existe "força do movimento": a velocidade não é uma força. Quem aplicaria essa força?',
+  cf:'A "força centrífuga" não é uma interação. Visto do chão, o que aponta para o centro é a resultante das forças reais.',
+  ine:'Força fictícia (−m a) só entra se o referencial for acelerado. Neste referencial, não.'
+};
+
+// ---- helpers de cena (SVG 480×260) ----
+const chao=(y=230)=>`<rect x="30" y="${y}" width="420" height="12" fill="#26405F"/>`;
+const bloco=(x,y,w=84,h=48,t='')=>`<rect x="${x-w/2}" y="${y-h}" width="${w}" height="${h}" rx="3" fill="#7FB2E5" stroke="#cfe1f5"/>${t?`<text x="${x}" y="${y-h/2+5}" text-anchor="middle" fill="#0c1626" font-weight="600" font-size="14">${t}</text>`:''}`;
+const txt=(x,y,t,c='#A3B4CA',s=14,a='start')=>`<text x="${x}" y="${y}" fill="${c}" font-size="${s}" text-anchor="${a}">${t}</text>`;
+const seta0=(x1,y1,x2,y2,c='#A3B4CA')=>`<defs><marker id="hh${c.slice(1)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="${c}"/></marker></defs><line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${c}" stroke-width="2.5" marker-end="url(#hh${c.slice(1)})"/>`;
+const rampa=(a)=>{const t=Math.tan(rad(a)),x0=40,y0=230,Lw=400,vx=x0,top=y0-Lw*t;
+  return {svg:`<polygon points="${x0},${y0} ${x0+Lw},${y0} ${x0+Lw},${top}" fill="#26405F"/><path d="M${x0+80},${y0} A 80 80 0 0 0 ${x0+80*Math.cos(rad(a))},${y0-80*Math.sin(rad(a))}" fill="none" stroke="#A3B4CA"/>${txt(x0+92,y0-8,a+'°','#A3B4CA',15)}`,
+   bx:s=>[x0+s*Math.cos(rad(a)),y0-s*Math.sin(rad(a))]}};
+const fluido=(y0=30)=>`<rect x="150" y="${y0}" width="180" height="${230-y0}" fill="#1b4a63" opacity=".55" stroke="#4f8db0"/>${txt(160,y0+20,'fluido','#9fd0e6',13)}`;
+
+// ---- situações. Cada variação: dados (texto), esp {força:{ang,rel}} (rel = tamanho / tamanho do peso), avisos, cena() ----
 const SIT=[
- {id:'livro-mesa',titulo:'Livro em repouso sobre a mesa',
-  dados:['Livro parado sobre uma mesa horizontal.','Atrito: <b>não é preciso</b> para explicar o repouso (nada tenta deslizar).'],
-  esp:{Fg:{ang:270,rel:1},N:{ang:90,rel:1}}, avisos:{f:'Nada tenta deslizar o livro: sem tendência de deslizar, não há atrito aqui.'},
-  cena:()=>`<rect x="40" y="180" width="400" height="14" fill="#26405F"/><rect x="190" y="124" width="100" height="56" rx="3" fill="#7FB2E5" stroke="#cfe1f5"/><text x="240" y="158" text-anchor="middle" fill="#0c1626" font-weight="600">livro</text>`},
- {id:'bola-topo',titulo:'Bola no ponto mais alto da subida',
-  dados:['Bola lançada para cima, <b>no ponto mais alto</b>: ali a velocidade é <b>0</b> por um instante.','Despreze o ar.'],
-  esp:{Fg:{ang:270,rel:1}}, avisos:{ar:'O enunciado manda desprezar o ar.',N:'Nada toca a bola: não há normal.'},
-  cena:()=>`<line x1="240" y1="230" x2="240" y2="60" stroke="#95A8C0" stroke-dasharray="5 6"/><circle cx="240" cy="50" r="16" fill="#7FB2E5" stroke="#cfe1f5"/><text x="262" y="55" fill="#A3B4CA" font-size="14">v = 0 (neste instante)</text><rect x="40" y="236" width="400" height="10" fill="#26405F"/>`},
- {id:'bloco-rampa',titulo:'Bloco em repouso numa rampa de 30°',
-  dados:['Bloco <b>parado</b> numa rampa que sobe para a direita, inclinada <b>30°</b>.','Há atrito suficiente para ele não deslizar.'],
-  esp:{Fg:{ang:270,rel:1},N:{ang:120,rel:Math.cos(rad(30))},f:{ang:30,rel:Math.sin(rad(30))}}, avisos:{},
-  cena:()=>`<polygon points="40,230 440,230 440,${230-400*Math.tan(rad(30))}" fill="#26405F"/><g transform="translate(240 ${230-200*Math.tan(rad(30))}) rotate(-30)"><rect x="-34" y="-38" width="68" height="38" rx="3" fill="#7FB2E5" stroke="#cfe1f5"/></g><path d="M110 230 A 70 70 0 0 0 ${110+Math.cos(rad(30))*70-0} ${230-Math.sin(rad(30))*70}" fill="none" stroke="#A3B4CA"/><text x="190" y="222" fill="#A3B4CA" font-size="14">30°</text>`}
+ {id:'livro-mesa',titulo:'Livro sobre a mesa',vars:[
+  {dados:['Livro <b>parado</b> sobre uma mesa horizontal.'],esp:{Fg:{ang:270,rel:1},N:{ang:90,rel:1}},avisos:{f:'Nada tenta deslizar o livro: sem tendência de deslizar, não há atrito.',Fap:'Ninguém empurra o livro neste caso.'},
+   cena:()=>chao()+bloco(240,230,100,50,'livro')},
+  {dados:['Você empurra o livro para a <b>direita</b> com uma força de <b>0,4 do peso</b>, mas ele continua <b>parado</b>.'],esp:{Fg:{ang:270,rel:1},N:{ang:90,rel:1},Fap:{ang:0,rel:.4},f:{ang:180,rel:.4}},avisos:{},
+   cena:()=>chao()+bloco(260,230,100,50,'livro')+seta0(90,205,200,205,'#fdba74')+txt(90,195,'mão','#fdba74')}]},
+ {id:'bola-ar',titulo:'Bola lançada para cima',vars:[
+  {dados:['Bola no <b>ponto mais alto</b>: ali a velocidade vale <b>0</b> por um instante.','Despreze o ar.'],esp:{Fg:{ang:270,rel:1}},avisos:{ar:'O enunciado manda desprezar o ar.',N:'Nada toca a bola: não há normal.'},
+   cena:()=>`<line x1="240" y1="230" x2="240" y2="60" stroke="#95A8C0" stroke-dasharray="5 6"/><circle cx="240" cy="50" r="16" fill="#7FB2E5" stroke="#cfe1f5"/>${txt(262,55,'v = 0 (neste instante)')}${chao()}`},
+  {dados:['Bola <b>subindo</b> depressa, já longe da mão.','Despreze o ar.'],esp:{Fg:{ang:270,rel:1}},avisos:{ar:'O enunciado manda desprezar o ar.',N:'Nada toca a bola: não há normal.',Fap:'Depois de largar a bola, a mão não age mais.'},
+   cena:()=>`${seta0(240,150,240,60)}<circle cx="240" cy="170" r="16" fill="#7FB2E5" stroke="#cfe1f5"/>${txt(262,100,'v ↑ (subindo)')}${chao()}`},
+  {dados:['Bola <b>subindo</b> no ar.','A resistência do ar vale <b>0,3 do peso</b>.'],esp:{Fg:{ang:270,rel:1},ar:{ang:270,rel:.3}},avisos:{Fap:'Depois de largar a bola, a mão não age mais.'},
+   cena:()=>`${seta0(240,150,240,60)}<circle cx="240" cy="170" r="16" fill="#7FB2E5" stroke="#cfe1f5"/>${txt(262,100,'v ↑ (subindo)')}${chao()}`},
+  {dados:['Bola <b>descendo</b> no ar.','A resistência do ar vale <b>0,3 do peso</b>.'],esp:{Fg:{ang:270,rel:1},ar:{ang:90,rel:.3}},avisos:{},
+   cena:()=>`${seta0(240,80,240,170)}<circle cx="240" cy="60" r="16" fill="#7FB2E5" stroke="#cfe1f5"/>${txt(262,120,'v ↓ (descendo)')}${chao()}`}]},
+ {id:'rampa',titulo:'Bloco parado numa rampa',vars:[30,20,37,45].map(a=>({
+   dados:[`Bloco <b>parado</b> numa rampa que sobe para a direita, inclinada <b>${a}°</b>.`,'Há atrito suficiente para ele não deslizar.'],
+   esp:{Fg:{ang:270,rel:1},N:{ang:90+a,rel:Math.cos(rad(a))},f:{ang:a,rel:Math.sin(rad(a))}},avisos:{},
+   cena:()=>{const r=rampa(a),[x,y]=r.bx(200);return r.svg+`<g transform="translate(${x} ${y}) rotate(${-a})"><rect x="-36" y="-40" width="72" height="40" rx="3" fill="#7FB2E5" stroke="#cfe1f5"/></g>`}}))},
+ {id:'esfera-fluido',titulo:'Esfera caindo num fluido',vars:[
+  {dados:['Esfera de aço <b>caindo</b> num tubo com óleo, com <b>velocidade constante</b> (velocidade terminal).','Empuxo: <b>0,15 do peso</b>.'],esp:{Fg:{ang:270,rel:1},E:{ang:90,rel:.15},R:{ang:90,rel:.85}},avisos:{ar:'Aqui o fluido é o óleo: use o arrasto do fluido.',N:'A esfera não toca nada sólido.'},
+   cena:()=>fluido()+`<circle cx="240" cy="130" r="17" fill="#c7d2dc" stroke="#fff"/>${seta0(300,100,300,170)}${txt(310,140,'v constante')}`},
+  {dados:['Esfera de aço <b>acabou de ser solta</b> no óleo: <b>v ≈ 0</b>.','Empuxo: <b>0,15 do peso</b>.'],esp:{Fg:{ang:270,rel:1},E:{ang:90,rel:.15}},avisos:{R:'Com v ≈ 0 o arrasto ainda é desprezível: ele cresce com a velocidade.',ar:'Aqui o fluido é o óleo.'},
+   cena:()=>fluido()+`<circle cx="240" cy="60" r="17" fill="#c7d2dc" stroke="#fff"/>${txt(262,65,'v ≈ 0')}`},
+  {dados:['Esfera de aço <b>acelerando</b> para baixo no óleo, ainda longe da velocidade terminal.','Empuxo: <b>0,15 do peso</b>. Arrasto: <b>0,35 do peso</b>.'],esp:{Fg:{ang:270,rel:1},E:{ang:90,rel:.15},R:{ang:90,rel:.35}},avisos:{ar:'Aqui o fluido é o óleo.'},
+   cena:()=>fluido()+`<circle cx="240" cy="120" r="17" fill="#c7d2dc" stroke="#fff"/>${seta0(300,100,300,160)}${txt(310,130,'v ↓ crescendo')}`}]},
+ {id:'bolha',titulo:'Bolha de ar subindo na água',vars:[
+  {dados:['Bolha <b>subindo</b> com <b>velocidade constante</b>.','O empuxo vale <b>5 vezes o peso</b> (o peso é pequeno: faça o peso curto).'],esp:{Fg:{ang:270,rel:1},E:{ang:90,rel:5},R:{ang:270,rel:4}},avisos:{ar:'Aqui o meio é a água: use o arrasto do fluido.'},
+   cena:()=>fluido()+`<circle cx="240" cy="150" r="12" fill="#e8f3fa" opacity=".9" stroke="#fff"/>${seta0(300,190,300,110)}${txt(310,150,'v constante')}`},
+  {dados:['Bolha <b>acabou de se soltar</b> do fundo: <b>v ≈ 0</b>.','O empuxo vale <b>5 vezes o peso</b> (faça o peso curto).'],esp:{Fg:{ang:270,rel:1},E:{ang:90,rel:5}},avisos:{R:'Com v ≈ 0 o arrasto ainda é desprezível.'},
+   cena:()=>fluido()+`<circle cx="240" cy="210" r="12" fill="#e8f3fa" opacity=".9" stroke="#fff"/>${txt(262,215,'v ≈ 0')}`}]},
+ {id:'onibus',titulo:'Bola pendurada num ônibus que acelera',vars:[
+  {dados:['Ônibus acelera para a <b>direita</b> e a bola fica <b>parada em relação ao ônibus</b>, com o fio a <b>30°</b> da vertical.','Desenhe as forças <b>no referencial do chão</b>. Resultante horizontal = m a.'],esp:{Fg:{ang:270,rel:1},T:{ang:60,rel:1/Math.cos(rad(30))}},avisos:{ine:'No referencial do chão (inercial) não há força fictícia: a resultante é m a.'},cena:()=>onibusCena(1)},
+  {dados:['Mesma situação, agora <b>no referencial do ônibus</b>: a bola está parada para quem está dentro.','Neste referencial vale ΣF = 0, com a força fictícia (aponta para o lado oposto à aceleração do ônibus).'],esp:{Fg:{ang:270,rel:1},T:{ang:60,rel:1/Math.cos(rad(30))},ine:{ang:180,rel:Math.tan(rad(30))}},avisos:{},cena:()=>onibusCena(1)},
+  {dados:['Ônibus acelera para a <b>esquerda</b>, bola parada em relação ao ônibus, fio a <b>30°</b> da vertical.','Desenhe as forças <b>no referencial do chão</b>.'],esp:{Fg:{ang:270,rel:1},T:{ang:120,rel:1/Math.cos(rad(30))}},avisos:{ine:'No referencial do chão não há força fictícia.'},cena:()=>onibusCena(-1)},
+  {dados:['Ônibus acelera para a <b>esquerda</b>. Agora <b>no referencial do ônibus</b> (bola parada).'],esp:{Fg:{ang:270,rel:1},T:{ang:120,rel:1/Math.cos(rad(30))},ine:{ang:0,rel:Math.tan(rad(30))}},avisos:{},cena:()=>onibusCena(-1)}]},
+ {id:'carro-curva',titulo:'Carro numa curva',vars:[
+  {dados:['Carro em curva <b>plana</b>, vista por trás. O <b>centro da curva fica à esquerda</b>.','Aceleração centrípeta: <b>0,4 g</b>. Velocidade constante.'],esp:{Fg:{ang:270,rel:1},N:{ang:90,rel:1},f:{ang:180,rel:.4}},avisos:{},cena:()=>carroCena(0,'left')},
+  {dados:['Carro em curva <b>plana</b>, vista por trás. O <b>centro da curva fica à direita</b>.','Aceleração centrípeta: <b>0,6 g</b>.'],esp:{Fg:{ang:270,rel:1},N:{ang:90,rel:1},f:{ang:0,rel:.6}},avisos:{},cena:()=>carroCena(0,'right')},
+  {dados:['Carro em curva <b>sobrelevada</b> de 20°, vista por trás, centro à <b>esquerda</b>.','Velocidade ideal: <b>sem atrito</b>.'],esp:{Fg:{ang:270,rel:1},N:{ang:110,rel:1/Math.cos(rad(20))}},avisos:{f:'Na velocidade ideal da curva sobrelevada o atrito não é necessário.'},cena:()=>carroCena(20,'left')}]},
+ {id:'fio',titulo:'Corpo pendurado em fio',vars:[
+  {dados:['Bloco preso a um fio, <b>no ponto mais baixo</b> do pêndulo, vista lateral.','Aceleração centrípeta: <b>0,4 g</b> (para cima).'],esp:{Fg:{ang:270,rel:1},T:{ang:90,rel:1.4}},avisos:{},cena:()=>`<line x1="240" y1="20" x2="240" y2="150" stroke="#cfe1f5" stroke-width="2"/>${bloco(240,200,70,50)}${txt(260,40,'fio')}`},
+  {dados:['Pêndulo no <b>ponto extremo</b> da oscilação: <b>v = 0</b>. O fio faz <b>30°</b> com a vertical, bola à direita do ponto de fixação.'],esp:{Fg:{ang:270,rel:1},T:{ang:120,rel:Math.cos(rad(30))}},avisos:{},cena:()=>`<line x1="190" y1="20" x2="${190+130*Math.sin(rad(30))}" y2="${20+130*Math.cos(rad(30))}" stroke="#cfe1f5" stroke-width="2"/><circle cx="${190+130*Math.sin(rad(30))}" cy="${20+130*Math.cos(rad(30))}" r="18" fill="#7FB2E5" stroke="#cfe1f5"/>${txt(220,40,'30°')}<line x1="190" y1="20" x2="190" y2="150" stroke="#95A8C0" stroke-dasharray="4 6"/>`},
+  {dados:['Elevador <b>subindo</b> com <b>velocidade constante</b>. Bloco pendurado por um fio no teto.'],esp:{Fg:{ang:270,rel:1},T:{ang:90,rel:1}},avisos:{},cena:()=>elevCena('↑ v constante')},
+  {dados:['Elevador <b>subindo e acelerando</b>: a = <b>0,25 g</b> para cima. Bloco pendurado por um fio.'],esp:{Fg:{ang:270,rel:1},T:{ang:90,rel:1.25}},avisos:{},cena:()=>elevCena('↑ a = 0,25 g')},
+  {dados:['Elevador <b>descendo e acelerando</b>: a = <b>0,25 g</b> para baixo. Bloco pendurado por um fio.'],esp:{Fg:{ang:270,rel:1},T:{ang:90,rel:.75}},avisos:{},cena:()=>elevCena('↓ a = 0,25 g')}]},
+ {id:'lustre',titulo:'Lustre preso por dois fios',vars:[30,45,60].map(a=>({
+   dados:[`Lustre <b>parado</b>, preso ao teto por <b>dois fios simétricos</b>. Cada fio faz <b>${a}°</b> com a <b>horizontal</b>.`,'Use "Tensão do fio" e "Tensão do 2º fio".'],
+   esp:{Fg:{ang:270,rel:1},T:{ang:a,rel:1/(2*Math.sin(rad(a)))},T2:{ang:180-a,rel:1/(2*Math.sin(rad(a)))}},avisos:{},
+   cena:()=>{const dx=110,dy=dx*Math.tan(rad(a));return `<line x1="${240-dx}" y1="${130-dy}" x2="240" y2="130" stroke="#cfe1f5" stroke-width="2"/><line x1="${240+dx}" y1="${130-dy}" x2="240" y2="130" stroke="#cfe1f5" stroke-width="2"/><rect x="20" y="${130-dy-14}" width="440" height="10" fill="#26405F"/>${bloco(240,180,80,50,'lustre')}${txt(240-dx+20,130-dy+30,a+'°','#A3B4CA',14)}`}}))},
+
+ {id:'disco-gelo',titulo:'Disco de hóquei no gelo',vars:[
+  {dados:['Disco deslizando para a <b>direita</b> sobre gelo <b>sem atrito</b>, com <b>velocidade constante</b>.'],esp:{Fg:{ang:270,rel:1},N:{ang:90,rel:1}},avisos:{f:'Gelo sem atrito: não há atrito.',Fap:'Ninguém empurra o disco agora: ele só mantém a velocidade (1ª lei de Newton).'},
+   cena:()=>chao()+bloco(220,230,70,26)+seta0(270,205,380,205)+txt(290,195,'v constante')},
+  {dados:['Disco deslizando para a <b>direita</b> numa parte <b>áspera</b> da pista e <b>freando</b>.','O atrito vale <b>0,15 do peso</b>.'],esp:{Fg:{ang:270,rel:1},N:{ang:90,rel:1},f:{ang:180,rel:.15}},avisos:{Fap:'Ninguém empurra o disco agora.'},
+   cena:()=>chao()+bloco(220,230,70,26)+seta0(270,205,380,205)+txt(290,195,'v diminuindo')}]},
+ {id:'caixa-corda',titulo:'Caixa puxada por uma corda',vars:[
+  {dados:['Caixa arrastada para a <b>direita</b> com <b>velocidade constante</b>, puxada por uma corda a <b>30°</b> acima da horizontal.','Tensão da corda: <b>0,4 do peso</b>. Calcule normal e atrito pela resultante nula.'],esp:{Fg:{ang:270,rel:1},T:{ang:30,rel:.4},N:{ang:90,rel:1-.4*Math.sin(rad(30))},f:{ang:180,rel:.4*Math.cos(rad(30))}},avisos:{Fap:'A corda já é a força de puxar: use a tensão.'},
+   cena:()=>chao()+bloco(200,230,90,50,'caixa')+`<line x1="245" y1="205" x2="360" y2="${205-115*Math.tan(rad(30))}" stroke="#cfe1f5" stroke-width="2"/>${txt(380,150,'corda 30°')}`},
+  {dados:['Caixa arrastada para a <b>direita</b> com <b>velocidade constante</b>, corda a <b>37°</b> acima da horizontal.','Tensão da corda: <b>0,5 do peso</b>.'],esp:{Fg:{ang:270,rel:1},T:{ang:37,rel:.5},N:{ang:90,rel:1-.5*Math.sin(rad(37))},f:{ang:180,rel:.5*Math.cos(rad(37))}},avisos:{Fap:'A corda já é a força de puxar: use a tensão.'},
+   cena:()=>chao()+bloco(200,230,90,50,'caixa')+`<line x1="245" y1="205" x2="360" y2="${205-115*Math.tan(rad(37))}" stroke="#cfe1f5" stroke-width="2"/>${txt(380,130,'corda 37°')}`}]},
+ {id:'parede',titulo:'Bloco contra a parede',vars:[
+  {dados:['Bloco <b>parado</b>, pressionado contra uma parede vertical pela mão (horizontal, para a <b>esquerda</b>).','Força da mão: <b>2 vezes o peso</b>.'],esp:{Fg:{ang:270,rel:1},Fap:{ang:180,rel:2},N:{ang:0,rel:2},f:{ang:90,rel:1}},avisos:{},
+   cena:()=>`<rect x="150" y="20" width="22" height="220" fill="#26405F"/>${bloco(205,150,66,60)}${seta0(320,120,250,120,'#fdba74')}${txt(300,108,'mão','#fdba74')}`},
+  {dados:['Bloco <b>descendo devagar</b> contra a parede (velocidade constante), mão horizontal para a <b>esquerda</b>.','Força da mão: <b>0,6 do peso</b>.'],esp:{Fg:{ang:270,rel:1},Fap:{ang:180,rel:.6},N:{ang:0,rel:.6},f:{ang:90,rel:1}},avisos:{},
+   cena:()=>`<rect x="150" y="20" width="22" height="220" fill="#26405F"/>${bloco(205,150,66,60)}${seta0(320,120,250,120,'#fdba74')}${seta0(205,100,205,170)}${txt(215,100,'v constante')}`}]},
+ {id:'paraquedista',titulo:'Paraquedista',vars:[
+  {dados:['Paraquedista <b>caindo</b> com <b>velocidade constante</b> (velocidade terminal), paraquedas aberto.'],esp:{Fg:{ang:270,rel:1},ar:{ang:90,rel:1}},avisos:{N:'Ele não toca em nada sólido.',E:'O empuxo do ar é desprezível aqui.'},cena:()=>paraCena('v constante')},
+  {dados:['Paraquedas <b>acabou de abrir</b>: a pessoa ainda cai, mas está <b>freando</b> (aceleração para cima).','A resistência do ar vale <b>3 vezes o peso</b>.'],esp:{Fg:{ang:270,rel:1},ar:{ang:90,rel:3}},avisos:{N:'Ele não toca em nada sólido.'},cena:()=>paraCena('v ↓ diminuindo')}]},
+ {id:'balanca',titulo:'Pessoa na balança do elevador',vars:[
+  {dados:['Elevador <b>subindo e acelerando</b>: a = <b>0,25 g</b> para cima. Desenhe as forças <b>na pessoa</b> (a balança aplica a normal).'],esp:{Fg:{ang:270,rel:1},N:{ang:90,rel:1.25}},avisos:{},cena:()=>balCena('↑ a = 0,25 g')},
+  {dados:['Elevador <b>descendo e acelerando</b>: a = <b>0,25 g</b> para baixo.'],esp:{Fg:{ang:270,rel:1},N:{ang:90,rel:.75}},avisos:{},cena:()=>balCena('↓ a = 0,25 g')},
+  {dados:['O cabo rompeu: elevador em <b>queda livre</b> (a = g).'],esp:{Fg:{ang:270,rel:1}},avisos:{N:'Em queda livre a pessoa e a balança caem juntas: a balança não é comprimida, a normal é zero.',ine:'Mesmo no referencial do elevador, o desenho aqui é feito no referencial do chão (inercial): sem força fictícia.'},cena:()=>balCena('queda livre')}]},
+ {id:'loop',titulo:'Carrinho num loop',vars:[
+  {dados:['Carrinho no ponto <b>mais alto</b> do loop, de lado, <b>sem sair da pista</b>.','Aceleração centrípeta: <b>2 g</b> (para baixo). A pista empurra o carrinho.'],esp:{Fg:{ang:270,rel:1},N:{ang:270,rel:1}},avisos:{cf:'Visto do chão, só há força real; a resultante para o centro é Fg + N.'},cena:()=>loopCena('top')},
+  {dados:['Carrinho no ponto <b>mais baixo</b> do loop.','Aceleração centrípeta: <b>2 g</b> (para cima).'],esp:{Fg:{ang:270,rel:1},N:{ang:90,rel:3}},avisos:{cf:'Visto do chão, só há força real; a resultante para o centro é N − Fg.'},cena:()=>loopCena('bottom')},
+  {dados:['Carrinho no ponto mais alto, na <b>velocidade mínima</b> para não cair: a pista <b>quase não toca</b> nele (aceleração centrípeta = g).'],esp:{Fg:{ang:270,rel:1}},avisos:{N:'Na velocidade mínima a normal é zero: só o peso fornece a força centrípeta.',cf:'Visto do chão, só o peso age.'},cena:()=>loopCena('top')}]},
+ {id:'satelite',titulo:'Satélite em órbita',vars:[
+  {dados:['Satélite em órbita circular, <b>Terra embaixo</b> na figura.','Ele está "flutuando" por dentro, mas só uma força real age nele.'],esp:{Fg:{ang:270,rel:1}},avisos:{N:'Nada empurra o satélite por contato.',cf:'A "força centrífuga" não age no satélite visto de fora: a gravidade é a força centrípeta.',mov:'O satélite se move porque tem velocidade, não porque algo o empurra.'},cena:()=>sateCena('down')},
+  {dados:['Satélite em órbita circular, <b>Terra à esquerda</b> na figura.'],esp:{Fg:{ang:180,rel:1}},avisos:{N:'Nada empurra o satélite por contato.',cf:'A "força centrífuga" não age no satélite visto de fora.',mov:'O satélite se move porque tem velocidade, não porque algo o empurra.'},cena:()=>sateCena('left')}]}
 ];
+const ORDEM=['livro-mesa','disco-gelo','bola-ar','rampa','caixa-corda','parede','esfera-fluido','bolha','paraquedista','balanca','fio','lustre','onibus','carro-curva','loop','satelite'];
+SIT.sort((a,b)=>ORDEM.indexOf(a.id)-ORDEM.indexOf(b.id));
+function paraCena(t){return `<path d="M200,70 A40,40 0 0 1 280,70 Z" fill="#c4b5fd" opacity=".8"/><line x1="205" y1="70" x2="240" y2="140"/><line x1="275" y1="70" x2="240" y2="140"/><line x1="205" y1="70" x2="240" y2="140" stroke="#cfe1f5"/><line x1="275" y1="70" x2="240" y2="140" stroke="#cfe1f5"/><circle cx="240" cy="150" r="9" fill="#7FB2E5" stroke="#cfe1f5"/><rect x="232" y="159" width="16" height="30" rx="4" fill="#7FB2E5" stroke="#cfe1f5"/>${seta0(340,90,340,170)}${txt(350,135,t)}`}
+function balCena(t){return `<rect x="170" y="20" width="140" height="220" rx="6" fill="#16253A" stroke="#3b5a82"/><rect x="190" y="215" width="100" height="10" fill="#26405F"/><circle cx="240" cy="120" r="14" fill="#7FB2E5" stroke="#cfe1f5"/><rect x="226" y="134" width="28" height="80" rx="6" fill="#7FB2E5" stroke="#cfe1f5"/>${txt(325,130,t,'#fdba74',14)}`}
+function loopCena(pos){return `<circle cx="240" cy="130" r="95" fill="none" stroke="#3b5a82" stroke-width="10"/>${pos==='top'?bloco2(240,35):bloco2(240,225)}${txt(320,30,pos==='top'?'ponto mais alto':'ponto mais baixo')}`}
+function bloco2(x,y){return `<rect x="${x-24}" y="${y-14}" width="48" height="26" rx="6" fill="#7FB2E5" stroke="#cfe1f5"/>`}
+function sateCena(lado){const e=lado==='down'?[240,320,150]:[40,130,150];const sx=lado==='down'?240:240,sy=lado==='down'?70:130;
+  return `<circle cx="${e[0]}" cy="${e[1]}" r="${e[2]}" fill="#1b4a63" stroke="#4f8db0"/>${txt(lado==='down'?215:60,lado==='down'?230:135,'Terra','#9fd0e6',15)}<circle cx="${lado==='down'?240:240}" cy="${lado==='down'?60:130}" r="12" fill="#c7d2dc" stroke="#fff"/>${txt(lado==='down'?262:262,lado==='down'?64:134,'satélite')}`}
+function onibusCena(dir){const x=dir>0?1:-1;const px=240,py=60,bx=px-x*(120*Math.sin(rad(30))),by=py+120*Math.cos(rad(30));
+  return `<rect x="60" y="30" width="360" height="190" rx="12" fill="#16253A" stroke="#3b5a82"/><line x1="${px}" y1="${py}" x2="${bx}" y2="${by}" stroke="#cfe1f5" stroke-width="2"/><circle cx="${bx}" cy="${by}" r="16" fill="#7FB2E5" stroke="#cfe1f5"/><circle cx="${px}" cy="${py}" r="4" fill="#fff"/>${seta0(x>0?170:310,240,x>0?310:170,240,'#fdba74')}${txt(x>0?190:200,256,'aceleração do ônibus','#fdba74',13)}`}
+function carroCena(a,lado){const L=lado==='left';const cx=240;
+  const pista=a?`<polygon points="${L?'40,230 440,230 440,170':'40,170 40,230 440,230'}" fill="#26405F" transform="${a?'':''}"/>`:chao();
+  return (a?`<g transform="rotate(${L?-a:a} 240 230)"><rect x="20" y="230" width="440" height="12" fill="#26405F"/><rect x="${cx-55}" y="190" width="110" height="40" rx="8" fill="#7FB2E5" stroke="#cfe1f5"/></g>`:chao()+`<rect x="${cx-55}" y="190" width="110" height="40" rx="8" fill="#7FB2E5" stroke="#cfe1f5"/>`)+seta0(L?200:280,90,L?60:420,90)+txt(L?60:420,78,'centro da curva','#A3B4CA',14,L?'start':'end')}
+function elevCena(t){return `<rect x="160" y="20" width="160" height="220" rx="6" fill="#16253A" stroke="#3b5a82"/><line x1="240" y1="20" x2="240" y2="130" stroke="#cfe1f5" stroke-width="2"/>${bloco(240,175,60,45)}${txt(335,130,t,'#fdba74',14)}`}
 
 // ---- estado ----
-const S={i:0,forcas:[],reg:SIT.map(()=>({tent:0,primeira:null,erros:[],feito:false})),t0:Date.now()};
+const S={i:0,forcas:[],sit:SIT.map(s=>({vi:0,usadas:[0],reg:[{tent:0,primeira:null,erros:[],feito:false,mostra:false}]})),t0:Date.now()};
+const cur=()=>S.sit[S.i], vcur=()=>cur().reg[cur().reg.length-1], V=()=>SIT[S.i].vars[cur().vi];
 
 // ---- desenho ----
-const U=40; // px por unidade
-function seta(x0,y0,ang,len,cor,tr){
-  const x1=x0+Math.cos(rad(ang))*len*U, y1=y0-Math.sin(rad(ang))*len*U;
-  return `<line x1="${x0}" y1="${y0}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="${cor}" stroke-width="4" ${tr?'stroke-dasharray="8 6"':''} marker-end="url(#h${cor.slice(1)})"/>`;
-}
+const U=34,CX=240,CY=240,UMAX=6;
 function marcadores(cores){return '<defs>'+cores.map(c=>`<marker id="h${c.slice(1)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="${c}"/></marker>`).join('')+'</defs>'}
-const todasCores=[...new Set(Object.values(FORCAS).map(f=>f.cor))];
-function rotulo(x,y,k){const f=FORCAS[k];return `<text x="${x+8}" y="${y-8}" fill="${f.cor}" font-size="22" font-family="Newsreader,Georgia,serif" font-style="italic" font-weight="600">${f.sim}<tspan font-size="14" dy="5">${f.sub}</tspan></text>`}
+const todasCores=[...new Set(['#86efac',...Object.values(FORCAS).map(f=>f.cor)])];
+function seta(ang,len,cor,tr){
+  const x1=CX+Math.cos(rad(ang))*len*U,y1=CY-Math.sin(rad(ang))*len*U;
+  return `<line x1="${CX}" y1="${CY}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="${cor}" stroke-width="4" ${tr?'stroke-dasharray="8 6"':''} marker-end="url(#h${cor.slice(1)})"/>`}
+function rotulo(k,ang,len){const f=FORCAS[k],x=CX+Math.cos(rad(ang))*len*U,y=CY-Math.sin(rad(ang))*len*U;
+  return `<text x="${(x+8).toFixed(0)}" y="${(y-8).toFixed(0)}" fill="${f.cor}" font-size="22" font-family="Newsreader,Georgia,serif" font-style="italic" font-weight="600">${f.sim}<tspan font-size="14" dy="5">${f.sub}</tspan></text>`}
 function desenhaDCL(solucao){
-  const cx=200,cy=200;let h=marcadores(todasCores);
-  h+=`<circle cx="${cx}" cy="${cy}" r="120" fill="none" stroke="#1e2c47"/><line x1="80" y1="${cy}" x2="320" y2="${cy}" stroke="#1e2c47"/><line x1="${cx}" y1="80" x2="${cx}" y2="320" stroke="#1e2c47"/>`;
-  [['0°',328,cy+4],['90°',cx-9,72],['180°',46,cy+4],['270°',cx-12,338]].forEach(([t,x,y])=>h+=`<text x="${x}" y="${y}" fill="#6b7f9e" font-size="12">${t}</text>`);
-  if(solucao){const e=SIT[S.i].esp;for(const k in e){const a=seta(cx,cy,e[k].ang,e[k].rel*4,'#86efac',true);h+=a}}
-  S.forcas.forEach(f=>{const F=FORCAS[f.k];h+=seta(cx,cy,f.ang,f.len,F.cor,F.armadilha);
-     const ex=cx+Math.cos(rad(f.ang))*f.len*U,ey=cy-Math.sin(rad(f.ang))*f.len*U;h+=rotulo(ex,ey,f.k)});
-  h+=`<rect x="${cx-11}" y="${cy-11}" width="22" height="22" rx="3" fill="#7FB2E5" stroke="#cfe1f5"/>`;
+  let h=marcadores(todasCores);
+  h+=`<circle cx="${CX}" cy="${CY}" r="${UMAX*U}" fill="none" stroke="#1e2c47"/><line x1="${CX-UMAX*U}" y1="${CY}" x2="${CX+UMAX*U}" y2="${CY}" stroke="#1e2c47"/><line x1="${CX}" y1="${CY-UMAX*U}" x2="${CX}" y2="${CY+UMAX*U}" stroke="#1e2c47"/>`;
+  [['0°',CX+UMAX*U+6,CY+4],['90°',CX-9,CY-UMAX*U-6],['180°',CX-UMAX*U-34,CY+4],['270°',CX-12,CY+UMAX*U+16]].forEach(([t,x,y])=>h+=`<text x="${x}" y="${y}" fill="#6b7f9e" font-size="12">${t}</text>`);
+  if(solucao){const e=V().esp,mx=Math.max(...Object.values(e).map(v=>v.rel)),P0=Math.min(3,5.5/mx);
+    for(const k in e)h+=seta(e[k].ang,e[k].rel*P0,'#86efac',true)}
+  S.forcas.forEach(f=>{const F=FORCAS[f.k];h+=seta(f.ang,f.len,F.cor,['mov','cf'].includes(f.k));h+=rotulo(f.k,f.ang,f.len)});
+  h+=`<rect x="${CX-11}" y="${CY-11}" width="22" height="22" rx="3" fill="#7FB2E5" stroke="#cfe1f5"/>`;
   $('dcl').innerHTML=h;
 }
 // ---- interface ----
 function paleta(){
   $('pal').innerHTML='';
   Object.entries(FORCAS).forEach(([k,F])=>{
-    const b=document.createElement('button');b.textContent=`${F.nome}`;b.dataset.k=k;
-    b.disabled=S.reg[S.i].feito||S.forcas.some(f=>f.k===k);
+    if(F.extra&&!S.forcas.some(f=>f.k==='T'))return;
+    const b=document.createElement('button');b.textContent=F.nome;b.dataset.k=k;
+    b.disabled=vcur().feito||S.forcas.some(f=>f.k===k);
     b.onclick=()=>{S.forcas.push({k,ang:90,len:2});render()};
     $('pal').appendChild(b)});
 }
@@ -192,45 +299,48 @@ function lista(){
     const F=FORCAS[f.k],d=document.createElement('div');d.className='frow';
     d.innerHTML=`<span class="nome" style="color:${F.cor}">${F.nome} <i style="font-family:Newsreader,serif">${F.sim}<sub>${F.sub}</sub></i></span><button class="rem" aria-label="Remover ${F.nome}">Remover</button>
       <div class="ctl"><label for="a${idx}">Ângulo</label><input id="a${idx}" type="range" min="0" max="345" step="15" value="${f.ang}"><span class="mono" id="av${idx}">${f.ang}°</span>
-      <label for="l${idx}">Tamanho</label><input id="l${idx}" type="range" min="0.5" max="5" step="0.1" value="${f.len}"><span class="mono" id="lv${idx}">${f.len.toFixed(1)}</span></div>`;
+      <label for="l${idx}">Tamanho</label><input id="l${idx}" type="range" min="0.2" max="${UMAX}" step="0.01" value="${f.len}"><input class="mono num" id="lv${idx}" type="number" inputmode="decimal" min="0.2" max="${UMAX}" step="0.01" value="${f.len.toFixed(2)}" aria-label="Tamanho de ${F.nome}"></div>`;
     d.querySelector('.rem').onclick=()=>{S.forcas.splice(idx,1);render()};
     d.querySelector(`#a${idx}`).oninput=e=>{f.ang=+e.target.value;$('av'+idx).textContent=f.ang+'°';desenhaDCL()};
-    d.querySelector(`#l${idx}`).oninput=e=>{f.len=+e.target.value;$('lv'+idx).textContent=f.len.toFixed(1);desenhaDCL()};
-    if(S.reg[S.i].feito){d.querySelectorAll('input,.rem').forEach(x=>x.disabled=true)}
+    d.querySelector(`#l${idx}`).oninput=e=>{f.len=+e.target.value;$('lv'+idx).value=f.len.toFixed(2);desenhaDCL()};
+    d.querySelector(`#lv${idx}`).oninput=e=>{const v=parseFloat(String(e.target.value).replace(',','.'));if(!isNaN(v)){f.len=Math.min(UMAX,Math.max(0.2,v));$('l'+idx).value=f.len;desenhaDCL()}};
+    if(vcur().feito)d.querySelectorAll('input,.rem').forEach(x=>x.disabled=true);
     L.appendChild(d)});
 }
 function cena(){
-  const s=SIT[S.i];
-  $('titulo').textContent=`Situação ${S.i+1} de ${SIT.length}: ${s.titulo}`;
-  $('cena').innerHTML=s.cena();
-  $('dados').innerHTML=s.dados.map(t=>`<p class="dado">${t}</p>`).join('');
-  $('prog').innerHTML=SIT.map((_,i)=>`<i class="${S.reg[i].feito?'d':''} ${i===S.i?'cur':''}"></i>`).join('');
+  const s=SIT[S.i],v=V();
+  $('titulo').textContent=`Situação ${S.i+1} de ${SIT.length}: ${s.titulo}`+(cur().reg.length>1?` · variação ${cur().reg.length}`:'');
+  $('cena').innerHTML=v.cena();
+  $('dados').innerHTML=v.dados.map(t=>`<p class="dado">${t}</p>`).join('');
+  $('prog').innerHTML=SIT.map((_,i)=>`<i class="${S.sit[i].reg.some(r=>r.feito)?'d':''} ${i===S.i?'cur':''}"></i>`).join('');
 }
-function render(){paleta();lista();desenhaDCL(S.reg[S.i].feito&&S.reg[S.i].mostra);}
+function render(){paleta();lista();desenhaDCL(vcur().feito&&vcur().mostra)}
 function situacao(i){S.i=i;S.forcas=[];cena();render();
-  $('bConf').disabled=S.reg[i].feito;$('bProx').disabled=true;
-  $('msg').className='msg';$('msg').textContent='Pense antes: quem está empurrando ou puxando o corpo? Só entra força que tem um autor.'}
+  const r=vcur();$('bConf').disabled=r.feito;$('bProx').disabled=!r.feito||i===SIT.length-1;$('bVar').disabled=!r.feito;
+  $('msg').className='msg';$('msg').textContent=r.feito?'Situação concluída. Se quiser, tente outra variação.':'Pense antes: quem está empurrando ou puxando o corpo? Só entra força que tem um autor.'}
 
 // ---- verificação ----
 function confere(){
-  const s=SIT[S.i],erros=[],msgs=[];
+  const v=V(),erros=[],msgs=[];
   const peso=S.forcas.find(f=>f.k==='Fg');
   const add=(c,m)=>{erros.push(c);msgs.push(m)};
   S.forcas.forEach(f=>{
-    if(f.k==='mov')add('forca_movimento','Não existe "força do movimento": a velocidade não é uma força. Quem aplicaria essa força?');
-    else if(f.k==='ine')add('forca_inercia','"Força da inércia" não é uma interação: inércia é a tendência de manter a velocidade, não uma força extra.');
-    else if(!s.esp[f.k])add(f.k+'_inventada',s.avisos[f.k]||`${FORCAS[f.k].nome} não atua neste caso.`);
+    if(!v.esp[f.k]){
+      add(f.k+'_inventada',v.avisos[f.k]||AVISO_PADRAO[f.k]||`${FORCAS[f.k].nome} não atua neste caso.`)}
   });
-  for(const k in s.esp){
-    const e=s.esp[k],f=S.forcas.find(x=>x.k===k);
-    if(!f){add(k+'_ausente',k==='Fg'?'Falta uma força que sempre existe perto da Terra.':`Falta a força: ${FORCAS[k].nome.toLowerCase()}. O corpo toca algo?`);continue}
-    if(dif(f.ang,e.ang)>10)add(k+'_direcao',`${FORCAS[k].nome}: a direção não confere. Pense em com que ela se relaciona (para onde o autor puxa/empurra).`);
-    else if(peso&&k!=='Fg'&&Math.abs(f.len/peso.len-e.rel)>0.2*e.rel+0.08)add(k+'_modulo',`${FORCAS[k].nome}: a direção está certa, mas o tamanho não combina com um corpo em repouso. Compare com o peso.`);
+  // fios: aceita T e T2 trocados entre si
+  const par=v.esp.T2&&S.forcas.find(f=>f.k==='T')&&S.forcas.find(f=>f.k==='T2');
+  const ang=(k)=>{const e=v.esp[k];if(par&&(k==='T'||k==='T2')){const a=S.forcas.find(f=>f.k==='T'),b=S.forcas.find(f=>f.k==='T2'),d1=dif(a.ang,v.esp.T.ang)+dif(b.ang,v.esp.T2.ang),d2=dif(a.ang,v.esp.T2.ang)+dif(b.ang,v.esp.T.ang);if(d2<d1)return k==='T'?v.esp.T2.ang:v.esp.T.ang}return e.ang};
+  for(const k in v.esp){
+    const e=v.esp[k],f=S.forcas.find(x=>x.k===k);
+    if(!f){add(k+'_ausente',k==='Fg'?'Falta uma força que sempre existe perto da Terra.':k==='ine'?'Neste referencial acelerado falta a força fictícia (−m a).':`Falta uma força: ${FORCAS[k].nome.toLowerCase()}. Há algo que a produza?`);continue}
+    if(dif(f.ang,ang(k))>10)add(k+'_direcao',`${FORCAS[k].nome}: a direção não confere. Pense em quem puxa ou empurra e para onde.`);
+    else if(peso&&k!=='Fg'&&Math.abs(f.len/peso.len-e.rel)>0.08*e.rel+0.05)add(k+'_modulo',`${FORCAS[k].nome}: a direção está certa, mas o tamanho não combina. Use os dados e o que sabe sobre a resultante (ΣF = m a).`);
   }
   return {erros,msgs};
 }
 $('bConf').onclick=()=>{
-  const r=S.reg[S.i];
+  const r=vcur();
   if(!S.forcas.length){$('msg').className='msg no';$('msg').textContent='Escolha ao menos uma força.';return}
   const {erros,msgs}=confere();r.tent++;
   if(r.primeira===null)r.primeira=erros.length===0;
@@ -238,8 +348,8 @@ $('bConf').onclick=()=>{
   if(!erros.length||r.tent>=3){
     r.feito=true;r.mostra=!!erros.length;
     $('msg').className='msg '+(erros.length?'no':'ok');
-    $('msg').innerHTML=erros.length?'Mostrei o diagrama em verde tracejado. Compare com o seu e veja o que mudaria.':'Certo! Todas as forças têm autor e o resultado combina com a situação.';
-    $('bConf').disabled=true;$('bProx').disabled=S.i===SIT.length-1;
+    $('msg').innerHTML=erros.length?'Mostrei o diagrama em verde tracejado. Compare com o seu. Depois tente <b>outra variação</b>.':'Certo! Todas as forças têm autor e os tamanhos combinam com a situação. Quer <b>outra variação</b>?';
+    $('bConf').disabled=true;$('bProx').disabled=S.i===SIT.length-1;$('bVar').disabled=false;
   }else{
     $('msg').className='msg no';
     $('msg').innerHTML='Quase. Revise:<ul class="fb">'+msgs.slice(0,2).map(m=>`<li>${m}</li>`).join('')+'</ul>';
@@ -247,14 +357,23 @@ $('bConf').onclick=()=>{
   cena();render();
 };
 $('bProx').onclick=()=>situacao(S.i+1);
+$('bVar').onclick=()=>{
+  const c=cur(),n=SIT[S.i].vars.length;let livres=[...Array(n).keys()].filter(k=>!c.usadas.includes(k));
+  if(!livres.length){c.usadas=[c.vi];livres=[...Array(n).keys()].filter(k=>k!==c.vi)}
+  if(!livres.length)return;
+  c.vi=livres[Math.floor(Math.random()*livres.length)];c.usadas.push(c.vi);
+  c.reg.push({tent:0,primeira:null,erros:[],feito:false,mostra:false});situacao(S.i)};
 
-// ---- coleta (mesmo coletor do app de produto vetorial) ----
+// ---- coleta (mesmo coletor dos outros apps) ----
 try{$('codigo').value=localStorage.getItem('codigo')||''}catch(e){}
 const normaliza=c=>{c=c.toUpperCase().replace(/[^A-Z0-9]/g,'');return c.length===6?c.slice(0,3)+'-'+c.slice(3):c};
 function payload(){return {app:APP_ID,codigo:normaliza($('codigo').value),
-  casos:S.reg.map((r,i)=>({caso:i+1,id:SIT[i].id,tentativas:r.tent,acertouNaPrimeira:r.primeira,erros:r.erros,concluido:r.feito})),
+  casos:S.sit.map((s,i)=>{const r0=s.reg[0],todas=s.reg;return {caso:i+1,id:SIT[i].id,
+    tentativas:todas.reduce((a,r)=>a+r.tent,0),acertouNaPrimeira:r0.primeira,
+    erros:[...new Set(todas.flatMap(r=>r.erros))],concluido:todas.some(r=>r.feito),
+    variacoes:todas.map((r,k)=>({v:s.usadas[k],tent:r.tent,ok1:r.primeira,feito:r.feito}))}}),
   util:+$('util').value||null,comentario:$('comentario').value.trim().slice(0,500),
-  explorou:0,duracaoSeg:Math.round((Date.now()-S.t0)/1000),enviadoEm:new Date().toISOString()}}
+  explorou:S.sit.reduce((a,s)=>a+s.reg.length-1,0),duracaoSeg:Math.round((Date.now()-S.t0)/1000),enviadoEm:new Date().toISOString()}}
 $('bEnv').onclick=async()=>{
   const p=payload(),st=$('stEnv');
   if(!/^[A-Z2-9]{3}-[A-Z2-9]{3}$/.test(p.codigo)){st.textContent='Código no formato ABC-123 (o que veio no e-mail).';return}
