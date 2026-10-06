@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0F1A28">
+<title>Diagrama de corpo livre — Monte e confira</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{color-scheme:dark;--bg:#0F1A28;--panel:#16253A;--line:#26405F;--ink:#ECEFF3;--dim:#A3B4CA;
+        --w:#fbbf24;--v:#5eead4;--c:#fb7185;--f:#c4b5fd;--ok:#86efac;--no:#fca5a5;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 18px 40px}
+  header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+  header h1{font-family:'Newsreader',Georgia,serif;font-size:1.6rem;margin:0;line-height:1.2}
+  header .sub{color:var(--dim);font-size:.82rem}
+  .grid{display:grid;grid-template-columns:1fr 380px;gap:16px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .panel h2{font-size:.95rem;color:var(--ink);margin:0 0 10px;font-weight:600}
+  canvas{width:100%;height:auto;aspect-ratio:1/1;max-height:640px;display:block;background:#0c1626;border-radius:8px;touch-action:none;cursor:grab}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:.82rem}
+  .legend span::before{content:"";display:inline-block;width:22px;height:0;border-top:3px solid;vertical-align:middle;margin-right:5px}
+  .legend .lw::before{border-color:var(--w)} .legend .lv::before{border-color:var(--v)}
+  .legend .lc::before{border-color:var(--c)} .legend .lf::before{border-color:var(--f);border-top-style:dashed}
+  .tabs{display:flex;gap:6px;margin-bottom:12px}
+  .tabs button{flex:1}
+  button,select,input{touch-action:manipulation;font:inherit;color:var(--ink);background:#0c1626;border:1px solid var(--line);border-radius:7px;padding:7px 10px}
+  button{cursor:pointer} button:hover{border-color:var(--dim)}
+  button.on{background:#1b3a5c;border-color:#7FB2E5}
+  button.prim{background:#E0A070;border-color:#E0A070;color:#1A1208;font-weight:600}
+  button:disabled{opacity:.45;cursor:default}
+  button,input,canvas{min-height:0} button{min-height:44px} .opts button{min-height:44px;min-width:52px}
+  :focus-visible{outline:2px solid #E0A070;outline-offset:2px}
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
+  label{display:block;font-size:.82rem;color:var(--dim);margin:8px 0 3px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .opts{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 6px}
+  .opts button{min-width:48px;padding:6px 8px}
+  .msg{margin-top:8px;padding:8px 10px;border-radius:7px;font-size:.9rem;border-left:4px solid var(--dim);background:#0c1626}
+  .msg.ok{border-color:var(--ok)} .msg.no{border-color:var(--no)}
+  .mono{font-family:'IBM Plex Mono',Menlo,Consolas,monospace}
+  .slider{display:grid;grid-template-columns:70px 1fr 40px;align-items:center;gap:8px;font-size:.88rem}
+  .slider input{padding:0}
+  .prog{display:flex;gap:6px;margin:6px 0 10px}
+  .prog i{flex:1;height:8px;border-radius:4px;background:#1e2c47}
+  .prog i.d{background:#2fa58e}.prog i.cur{outline:2px solid var(--w)}
+  small,.hint{color:var(--dim);font-size:.8rem;line-height:1.4}
+  #envio input{width:100%} #envio .row input{flex:1}
+  code{background:#0c1626;padding:1px 5px;border-radius:4px}
+  svg.cena{width:100%;height:auto;display:block;background:#0c1626;border-radius:8px}
+  .frow{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+  .frow .nome{font-weight:600}
+  .frow .ctl{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr 3.4em;gap:4px 8px;align-items:center;font-size:.85rem;color:var(--dim)}
+  .frow input[type=range]{padding:0}
+  .pal button{min-width:0;text-align:left}
+  .rem{min-height:36px!important;padding:2px 10px}
+  .dado{margin:.2rem 0;color:var(--ink)} .dado b{color:var(--w)}
+  ul.fb{margin:.4rem 0 0;padding-left:1.1rem} ul.fb li{margin:.2rem 0}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Diagrama de corpo livre</h1>
+    <div class="sub"><a href="../" style="color:var(--dim)">← Física I</a> · Aula 2 · Leis de Newton</div>
+  </header>
+
+  <div class="grid">
+    <div>
+      <div class="panel">
+        <div class="prog" id="prog"></div>
+        <h2 id="titulo"></h2>
+        <svg class="cena" id="cena" viewBox="0 0 480 260" role="img" aria-label="Situação física"></svg>
+        <div id="dados" style="margin-top:8px"></div>
+      </div>
+      <div class="panel" style="margin-top:14px">
+        <h2>Seu diagrama (só o corpo, só as forças que agem nele)</h2>
+        <svg class="cena" id="dcl" viewBox="0 0 400 400" role="img" aria-label="Área do diagrama de corpo livre: ângulo 0 graus é para a direita, 90 para cima"></svg>
+        <p class="hint">Ângulo: 0° = direita, 90° = cima, 180° = esquerda, 270° = baixo. Tamanho da seta = intensidade da força.</p>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <h2>1. Escolha as forças</h2>
+        <div class="opts pal" id="pal" role="group" aria-label="Forças disponíveis"></div>
+        <h2 style="margin-top:12px">2. Ajuste direção e tamanho</h2>
+        <div id="lista"><p class="hint">Nenhuma força ainda.</p></div>
+        <div class="row" style="margin-top:10px">
+          <button class="prim" id="bConf">Conferir</button>
+          <button id="bProx" disabled>Próxima situação →</button>
+        </div>
+        <div class="msg" id="msg" role="status" aria-live="polite">Pense antes: quem está empurrando ou puxando o corpo? Só entra força que tem um autor.</div>
+      </div>
+
+      <div class="panel" id="envio" style="margin-top:14px">
+        <h2>Registrar meu uso (código individual)</h2>
+        <p class="hint">Use o <b>código que a professora enviou ao seu e-mail</b>. O envio registra que você testou o app e que tipos de erro apareceram. Não escreva seu nome.</p>
+        <label for="codigo">Meu código</label>
+        <input id="codigo" name="codigo" placeholder="ex.: K7M-4QX…" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="send">
+        <label for="util">O app ajudou a montar diagramas de corpo livre? (opcional)</label>
+        <select id="util" name="util"><option value="">—</option><option value="1">1 · não ajudou</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 · ajudou muito</option></select>
+        <label for="comentario">Comentário: o que travou, o que melhorar (opcional)</label>
+        <textarea id="comentario" name="comentario" maxlength="500" rows="3" autocomplete="off" placeholder="Escreva aqui…" style="width:100%;font:inherit;color:var(--ink);background:#0c1626;border:1px solid var(--line);border-radius:7px;padding:8px 10px;resize:vertical"></textarea>
+        <div class="row" style="margin-top:10px">
+          <button class="prim" id="bEnv">Enviar resultado</button>
+          <span id="stEnv" class="hint" role="status" aria-live="polite"></span>
+        </div>
+        <details style="margin-top:8px"><summary class="hint">Se o envio falhar</summary>
+          <p class="hint">Copie este texto e envie à professora por e-mail ou pelo SIGAA:</p>
+          <input id="fallback" aria-label="Texto de reserva para copiar" readonly class="mono">
+        </details>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const params=new URLSearchParams(location.search);
+const COLETOR_URL=params.get('coletor')||'';
+const APP_ID='F1-dcl-v1';
+const $=id=>document.getElementById(id);
+const rad=d=>d*Math.PI/180;
+const dif=(a,b)=>{let d=Math.abs(a-b)%360;return d>180?360-d:d};
+
+// ---- forças disponíveis (as 3 últimas são "armadilhas" que diagnosticam concepções erradas) ----
+const FORCAS={
+  Fg:{nome:'Peso',sim:'F',sub:'g',cor:'#fbbf24'},
+  N:{nome:'Normal',sim:'N',sub:'',cor:'#5eead4'},
+  f:{nome:'Atrito',sim:'f',sub:'',cor:'#fb7185'},
+  T:{nome:'Tensão',sim:'T',sub:'',cor:'#7FB2E5'},
+  mov:{nome:'Força do movimento',sim:'F',sub:'mov',cor:'#95A8C0',armadilha:true},
+  ine:{nome:'Força da inércia',sim:'F',sub:'in',cor:'#95A8C0',armadilha:true},
+  ar:{nome:'Força do ar',sim:'F',sub:'ar',cor:'#95A8C0'}
+};
+// ---- situações. esp: forças esperadas {ang, rel = intensidade / intensidade do peso} ----
+const SIT=[
+ {id:'livro-mesa',titulo:'Livro em repouso sobre a mesa',
+  dados:['Livro parado sobre uma mesa horizontal.','Atrito: <b>não é preciso</b> para explicar o repouso (nada tenta deslizar).'],
+  esp:{Fg:{ang:270,rel:1},N:{ang:90,rel:1}}, avisos:{f:'Nada tenta deslizar o livro: sem tendência de deslizar, não há atrito aqui.'},
+  cena:()=>`<rect x="40" y="180" width="400" height="14" fill="#26405F"/><rect x="190" y="124" width="100" height="56" rx="3" fill="#7FB2E5" stroke="#cfe1f5"/><text x="240" y="158" text-anchor="middle" fill="#0c1626" font-weight="600">livro</text>`},
+ {id:'bola-topo',titulo:'Bola no ponto mais alto da subida',
+  dados:['Bola lançada para cima, <b>no ponto mais alto</b>: ali a velocidade é <b>0</b> por um instante.','Despreze o ar.'],
+  esp:{Fg:{ang:270,rel:1}}, avisos:{ar:'O enunciado manda desprezar o ar.',N:'Nada toca a bola: não há normal.'},
+  cena:()=>`<line x1="240" y1="230" x2="240" y2="60" stroke="#95A8C0" stroke-dasharray="5 6"/><circle cx="240" cy="50" r="16" fill="#7FB2E5" stroke="#cfe1f5"/><text x="262" y="55" fill="#A3B4CA" font-size="14">v = 0 (neste instante)</text><rect x="40" y="236" width="400" height="10" fill="#26405F"/>`},
+ {id:'bloco-rampa',titulo:'Bloco em repouso numa rampa de 30°',
+  dados:['Bloco <b>parado</b> numa rampa que sobe para a direita, inclinada <b>30°</b>.','Há atrito suficiente para ele não deslizar.'],
+  esp:{Fg:{ang:270,rel:1},N:{ang:120,rel:Math.cos(rad(30))},f:{ang:30,rel:Math.sin(rad(30))}}, avisos:{},
+  cena:()=>`<polygon points="40,230 440,230 440,${230-400*Math.tan(rad(30))}" fill="#26405F"/><g transform="translate(240 ${230-200*Math.tan(rad(30))}) rotate(-30)"><rect x="-34" y="-38" width="68" height="38" rx="3" fill="#7FB2E5" stroke="#cfe1f5"/></g><path d="M110 230 A 70 70 0 0 0 ${110+Math.cos(rad(30))*70-0} ${230-Math.sin(rad(30))*70}" fill="none" stroke="#A3B4CA"/><text x="190" y="222" fill="#A3B4CA" font-size="14">30°</text>`}
+];
+
+// ---- estado ----
+const S={i:0,forcas:[],reg:SIT.map(()=>({tent:0,primeira:null,erros:[],feito:false})),t0:Date.now()};
+
+// ---- desenho ----
+const U=40; // px por unidade
+function seta(x0,y0,ang,len,cor,tr){
+  const x1=x0+Math.cos(rad(ang))*len*U, y1=y0-Math.sin(rad(ang))*len*U;
+  return `<line x1="${x0}" y1="${y0}" x2="${x1.toFixed(1)}" y2="${y1.toFixed(1)}" stroke="${cor}" stroke-width="4" ${tr?'stroke-dasharray="8 6"':''} marker-end="url(#h${cor.slice(1)})"/>`;
+}
+function marcadores(cores){return '<defs>'+cores.map(c=>`<marker id="h${c.slice(1)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="${c}"/></marker>`).join('')+'</defs>'}
+const todasCores=[...new Set(Object.values(FORCAS).map(f=>f.cor))];
+function rotulo(x,y,k){const f=FORCAS[k];return `<text x="${x+8}" y="${y-8}" fill="${f.cor}" font-size="22" font-family="Newsreader,Georgia,serif" font-style="italic" font-weight="600">${f.sim}<tspan font-size="14" dy="5">${f.sub}</tspan></text>`}
+function desenhaDCL(solucao){
+  const cx=200,cy=200;let h=marcadores(todasCores);
+  h+=`<circle cx="${cx}" cy="${cy}" r="120" fill="none" stroke="#1e2c47"/><line x1="80" y1="${cy}" x2="320" y2="${cy}" stroke="#1e2c47"/><line x1="${cx}" y1="80" x2="${cx}" y2="320" stroke="#1e2c47"/>`;
+  [['0°',328,cy+4],['90°',cx-9,72],['180°',46,cy+4],['270°',cx-12,338]].forEach(([t,x,y])=>h+=`<text x="${x}" y="${y}" fill="#6b7f9e" font-size="12">${t}</text>`);
+  if(solucao){const e=SIT[S.i].esp;for(const k in e){const a=seta(cx,cy,e[k].ang,e[k].rel*4,'#86efac',true);h+=a}}
+  S.forcas.forEach(f=>{const F=FORCAS[f.k];h+=seta(cx,cy,f.ang,f.len,F.cor,F.armadilha);
+     const ex=cx+Math.cos(rad(f.ang))*f.len*U,ey=cy-Math.sin(rad(f.ang))*f.len*U;h+=rotulo(ex,ey,f.k)});
+  h+=`<rect x="${cx-11}" y="${cy-11}" width="22" height="22" rx="3" fill="#7FB2E5" stroke="#cfe1f5"/>`;
+  $('dcl').innerHTML=h;
+}
+// ---- interface ----
+function paleta(){
+  $('pal').innerHTML='';
+  Object.entries(FORCAS).forEach(([k,F])=>{
+    const b=document.createElement('button');b.textContent=`${F.nome}`;b.dataset.k=k;
+    b.disabled=S.reg[S.i].feito||S.forcas.some(f=>f.k===k);
+    b.onclick=()=>{S.forcas.push({k,ang:90,len:2});render()};
+    $('pal').appendChild(b)});
+}
+function lista(){
+  const L=$('lista');
+  if(!S.forcas.length){L.innerHTML='<p class="hint">Nenhuma força ainda.</p>';return}
+  L.innerHTML='';
+  S.forcas.forEach((f,idx)=>{
+    const F=FORCAS[f.k],d=document.createElement('div');d.className='frow';
+    d.innerHTML=`<span class="nome" style="color:${F.cor}">${F.nome} <i style="font-family:Newsreader,serif">${F.sim}<sub>${F.sub}</sub></i></span><button class="rem" aria-label="Remover ${F.nome}">Remover</button>
+      <div class="ctl"><label for="a${idx}">Ângulo</label><input id="a${idx}" type="range" min="0" max="345" step="15" value="${f.ang}"><span class="mono" id="av${idx}">${f.ang}°</span>
+      <label for="l${idx}">Tamanho</label><input id="l${idx}" type="range" min="0.5" max="5" step="0.1" value="${f.len}"><span class="mono" id="lv${idx}">${f.len.toFixed(1)}</span></div>`;
+    d.querySelector('.rem').onclick=()=>{S.forcas.splice(idx,1);render()};
+    d.querySelector(`#a${idx}`).oninput=e=>{f.ang=+e.target.value;$('av'+idx).textContent=f.ang+'°';desenhaDCL()};
+    d.querySelector(`#l${idx}`).oninput=e=>{f.len=+e.target.value;$('lv'+idx).textContent=f.len.toFixed(1);desenhaDCL()};
+    if(S.reg[S.i].feito){d.querySelectorAll('input,.rem').forEach(x=>x.disabled=true)}
+    L.appendChild(d)});
+}
+function cena(){
+  const s=SIT[S.i];
+  $('titulo').textContent=`Situação ${S.i+1} de ${SIT.length}: ${s.titulo}`;
+  $('cena').innerHTML=s.cena();
+  $('dados').innerHTML=s.dados.map(t=>`<p class="dado">${t}</p>`).join('');
+  $('prog').innerHTML=SIT.map((_,i)=>`<i class="${S.reg[i].feito?'d':''} ${i===S.i?'cur':''}"></i>`).join('');
+}
+function render(){paleta();lista();desenhaDCL(S.reg[S.i].feito&&S.reg[S.i].mostra);}
+function situacao(i){S.i=i;S.forcas=[];cena();render();
+  $('bConf').disabled=S.reg[i].feito;$('bProx').disabled=true;
+  $('msg').className='msg';$('msg').textContent='Pense antes: quem está empurrando ou puxando o corpo? Só entra força que tem um autor.'}
+
+// ---- verificação ----
+function confere(){
+  const s=SIT[S.i],erros=[],msgs=[];
+  const peso=S.forcas.find(f=>f.k==='Fg');
+  const add=(c,m)=>{erros.push(c);msgs.push(m)};
+  S.forcas.forEach(f=>{
+    if(f.k==='mov')add('forca_movimento','Não existe "força do movimento": a velocidade não é uma força. Quem aplicaria essa força?');
+    else if(f.k==='ine')add('forca_inercia','"Força da inércia" não é uma interação: inércia é a tendência de manter a velocidade, não uma força extra.');
+    else if(!s.esp[f.k])add(f.k+'_inventada',s.avisos[f.k]||`${FORCAS[f.k].nome} não atua neste caso.`);
+  });
+  for(const k in s.esp){
+    const e=s.esp[k],f=S.forcas.find(x=>x.k===k);
+    if(!f){add(k+'_ausente',k==='Fg'?'Falta uma força que sempre existe perto da Terra.':`Falta a força: ${FORCAS[k].nome.toLowerCase()}. O corpo toca algo?`);continue}
+    if(dif(f.ang,e.ang)>10)add(k+'_direcao',`${FORCAS[k].nome}: a direção não confere. Pense em com que ela se relaciona (para onde o autor puxa/empurra).`);
+    else if(peso&&k!=='Fg'&&Math.abs(f.len/peso.len-e.rel)>0.2*e.rel+0.08)add(k+'_modulo',`${FORCAS[k].nome}: a direção está certa, mas o tamanho não combina com um corpo em repouso. Compare com o peso.`);
+  }
+  return {erros,msgs};
+}
+$('bConf').onclick=()=>{
+  const r=S.reg[S.i];
+  if(!S.forcas.length){$('msg').className='msg no';$('msg').textContent='Escolha ao menos uma força.';return}
+  const {erros,msgs}=confere();r.tent++;
+  if(r.primeira===null)r.primeira=erros.length===0;
+  erros.forEach(e=>{if(!r.erros.includes(e))r.erros.push(e)});
+  if(!erros.length||r.tent>=3){
+    r.feito=true;r.mostra=!!erros.length;
+    $('msg').className='msg '+(erros.length?'no':'ok');
+    $('msg').innerHTML=erros.length?'Mostrei o diagrama em verde tracejado. Compare com o seu e veja o que mudaria.':'Certo! Todas as forças têm autor e o resultado combina com a situação.';
+    $('bConf').disabled=true;$('bProx').disabled=S.i===SIT.length-1;
+  }else{
+    $('msg').className='msg no';
+    $('msg').innerHTML='Quase. Revise:<ul class="fb">'+msgs.slice(0,2).map(m=>`<li>${m}</li>`).join('')+'</ul>';
+  }
+  cena();render();
+};
+$('bProx').onclick=()=>situacao(S.i+1);
+
+// ---- coleta (mesmo coletor do app de produto vetorial) ----
+try{$('codigo').value=localStorage.getItem('codigo')||''}catch(e){}
+const normaliza=c=>{c=c.toUpperCase().replace(/[^A-Z0-9]/g,'');return c.length===6?c.slice(0,3)+'-'+c.slice(3):c};
+function payload(){return {app:APP_ID,codigo:normaliza($('codigo').value),
+  casos:S.reg.map((r,i)=>({caso:i+1,id:SIT[i].id,tentativas:r.tent,acertouNaPrimeira:r.primeira,erros:r.erros,concluido:r.feito})),
+  util:+$('util').value||null,comentario:$('comentario').value.trim().slice(0,500),
+  explorou:0,duracaoSeg:Math.round((Date.now()-S.t0)/1000),enviadoEm:new Date().toISOString()}}
+$('bEnv').onclick=async()=>{
+  const p=payload(),st=$('stEnv');
+  if(!/^[A-Z2-9]{3}-[A-Z2-9]{3}$/.test(p.codigo)){st.textContent='Código no formato ABC-123 (o que veio no e-mail).';return}
+  try{localStorage.setItem('codigo',p.codigo)}catch(e){}
+  try{$('fallback').value='FIS1-'+btoa(unescape(encodeURIComponent(JSON.stringify(p))))}catch(e){}
+  if(!COLETOR_URL){st.textContent='Coletor não configurado: use o texto em "Se o envio falhar".';return}
+  st.textContent='Enviando…';$('bEnv').disabled=true;
+  try{
+    const r=await fetch(COLETOR_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(p)});
+    let ok=r.ok,erro='';try{const j=await r.json();ok=j.ok===true;erro=j.erro||''}catch(e){}
+    st.textContent=ok?'Enviado ✔ ('+new Date().toLocaleTimeString()+')':(/desconhecido/.test(erro)?'Código não reconhecido: confira o e-mail.':'Falhou. Use o texto de reserva.');
+  }catch(e){st.textContent='Sem conexão. Use o texto de reserva.'}
+  $('bEnv').disabled=false;
+};
+situacao(0);
+</script>
+</body>
+</html>
