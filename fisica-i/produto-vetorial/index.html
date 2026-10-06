@@ -3,20 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0F1A28">
 <title>Produto vetorial — Coriolis</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:wght@600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-  :root{--bg:#0a1220;--panel:#101b2e;--line:#1e2c47;--ink:#e7edf7;--dim:#8ea1c2;
+  :root{color-scheme:dark;--bg:#0F1A28;--panel:#16253A;--line:#26405F;--ink:#ECEFF3;--dim:#A3B4CA;
         --w:#fbbf24;--v:#5eead4;--c:#fb7185;--f:#c4b5fd;--ok:#86efac;--no:#fca5a5;}
   *{box-sizing:border-box}
-  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans','Segoe UI',system-ui,sans-serif;-webkit-font-smoothing:antialiased}
   .wrap{max-width:1180px;margin:0 auto;padding:20px 18px 40px}
   header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px;flex-wrap:wrap;gap:8px}
-  header h1{font-size:1.25rem;margin:0}
+  header h1{font-family:'Newsreader',Georgia,serif;font-size:1.6rem;margin:0;line-height:1.2}
   header .sub{color:var(--dim);font-size:.82rem}
   .grid{display:grid;grid-template-columns:1fr 380px;gap:16px}
   @media(max-width:900px){.grid{grid-template-columns:1fr}}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
-  .panel h2{font-size:.72rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);margin:0 0 10px;font-weight:600}
+  .panel h2{font-size:.95rem;color:var(--ink);margin:0 0 10px;font-weight:600}
   canvas{width:100%;height:auto;aspect-ratio:1/1;max-height:640px;display:block;background:#0c1626;border-radius:8px;touch-action:none;cursor:grab}
   .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:.82rem}
   .legend span::before{content:"";display:inline-block;width:22px;height:0;border-top:3px solid;vertical-align:middle;margin-right:5px}
@@ -24,18 +28,21 @@
   .legend .lc::before{border-color:var(--c)} .legend .lf::before{border-color:var(--f);border-top-style:dashed}
   .tabs{display:flex;gap:6px;margin-bottom:12px}
   .tabs button{flex:1}
-  button,select,input{font:inherit;color:var(--ink);background:#0c1626;border:1px solid var(--line);border-radius:7px;padding:7px 10px}
+  button,select,input{touch-action:manipulation;font:inherit;color:var(--ink);background:#0c1626;border:1px solid var(--line);border-radius:7px;padding:7px 10px}
   button{cursor:pointer} button:hover{border-color:var(--dim)}
-  button.on{background:#1b3a5c;border-color:#5b8cc0}
-  button.prim{background:#1f6f5f;border-color:#2fa58e;font-weight:600}
+  button.on{background:#1b3a5c;border-color:#7FB2E5}
+  button.prim{background:#E0A070;border-color:#E0A070;color:#1A1208;font-weight:600}
   button:disabled{opacity:.45;cursor:default}
+  button,input,canvas{min-height:0} button{min-height:44px} .opts button{min-height:44px;min-width:52px}
+  :focus-visible{outline:2px solid #E0A070;outline-offset:2px}
+  @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important}}
   label{display:block;font-size:.82rem;color:var(--dim);margin:8px 0 3px}
   .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
   .opts{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 6px}
   .opts button{min-width:48px;padding:6px 8px}
   .msg{margin-top:8px;padding:8px 10px;border-radius:7px;font-size:.9rem;border-left:4px solid var(--dim);background:#0c1626}
   .msg.ok{border-color:var(--ok)} .msg.no{border-color:var(--no)}
-  .mono{font-family:Menlo,Consolas,monospace}
+  .mono{font-family:'IBM Plex Mono',Menlo,Consolas,monospace}
   .slider{display:grid;grid-template-columns:70px 1fr 40px;align-items:center;gap:8px;font-size:.88rem}
   .slider input{padding:0}
   .prog{display:flex;gap:6px;margin:6px 0 10px}
@@ -49,14 +56,15 @@
 <body>
 <div class="wrap">
   <header>
-    <h1>Produto vetorial em 3D <span class="mono" style="color:var(--c)">ω × v′</span></h1>
+    <h1>Produto vetorial em 3D <span class="mono" style="color:var(--c);white-space:nowrap">ω × v′</span></h1>
     <div class="sub"><a href="../" style="color:var(--dim)">← Física I</a> · Aula 3 · Referenciais que giram</div>
   </header>
 
   <div class="grid">
     <div class="panel">
-      <h2>Arraste para girar a vista · sistema de mão direita (x, y, z)</h2>
-      <canvas id="cv" width="900" height="900"></canvas>
+      <h2>Vista 3D</h2>
+      <p class="hint" style="margin:0 0 8px">Arraste para girar (ou use as setas do teclado). Sistema de mão direita: x → direita, y → fundo, z → cima.</p>
+      <canvas id="cv" width="900" height="900" tabindex="0" role="img" aria-label="Vista 3D dos vetores ω, v′, ω×v′ e F_C; use as setas do teclado para girar"></canvas>
       <div class="legend">
         <span class="lw">ω (rotação)</span><span class="lv">v′ (velocidade no referencial que gira)</span>
         <span class="lc">ω × v′</span><span class="lf">F<sub>C</sub> = −2m ω × v′</span>
@@ -66,22 +74,22 @@
     <div>
       <div class="panel">
         <div class="tabs">
-          <button id="tTreino" class="on">Treinar (5 casos)</button>
-          <button id="tExplora">Explorar</button>
+          <button id="tTreino" class="on" aria-pressed="true">Treinar (5 casos)</button>
+          <button id="tExplora" aria-pressed="false">Explorar</button>
         </div>
 
         <div id="treino">
           <div class="prog" id="prog"></div>
           <div id="enun"></div>
-          <label>1. Direção de <b class="mono">ω × v′</b></label>
-          <div class="opts" id="optP"></div>
-          <label>2. Direção de <b class="mono">F<sub>C</sub> = −2m ω × v′</b> (m &gt; 0)</label>
-          <div class="opts" id="optF"></div>
+          <label id="lP">1. Direção de <b class="mono">ω × v′</b></label>
+          <div class="opts" id="optP" role="group" aria-labelledby="lP"></div>
+          <label id="lF">2. Direção de <b class="mono">F<sub>C</sub> = −2m ω × v′</b> (m &gt; 0)</label>
+          <div class="opts" id="optF" role="group" aria-labelledby="lF"></div>
           <div class="row">
             <button class="prim" id="bConf">Conferir</button>
             <button id="bProx" disabled>Próximo caso →</button>
           </div>
-          <div class="msg" id="msg">Preveja <b>antes</b> de ver: use a mão direita. A seta só aparece depois de conferir.</div>
+          <div class="msg" id="msg" role="status" aria-live="polite">Preveja <b>antes</b> de ver: use a mão direita. A seta só aparece depois de conferir.</div>
         </div>
 
         <div id="explora" hidden>
@@ -89,7 +97,7 @@
           <div id="sw"></div>
           <div class="slider"><span style="color:var(--v)">v′</span><span></span><span></span></div>
           <div id="sv"></div>
-          <div class="slider"><span>m</span><input type="range" id="sm" min="0.5" max="3" step="0.5" value="1"><span id="vm">1</span></div>
+          <div class="slider"><span>m</span><input type="range" id="sm" aria-label="Massa m" min="0.5" max="3" step="0.5" value="1"><span id="vm">1</span></div>
           <div class="msg mono" id="calc"></div>
           <p class="hint">Teste: ω ∥ v′ dá zero? Troque o sinal de v′: F<sub>C</sub> inverte? Em qual plano fica sempre F<sub>C</sub>?</p>
         </div>
@@ -98,15 +106,15 @@
       <div class="panel" id="envio" style="margin-top:14px">
         <h2>Registrar meu uso (código individual)</h2>
         <p class="hint">Use o <b>código que a professora enviou ao seu e-mail</b>. Serve só para estatística de uso do app (quem testou e onde travou) e <b>não vale nota</b>.</p>
-        <label>Meu código</label>
-        <input id="codigo" placeholder="ex.: K7M-4QX" maxlength="8" autocomplete="off" autocapitalize="characters">
+        <label for="codigo">Meu código</label>
+        <input id="codigo" name="codigo" placeholder="ex.: K7M-4QX…" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="send">
         <div class="row" style="margin-top:10px">
           <button class="prim" id="bEnv">Enviar resultado</button>
-          <span id="stEnv" class="hint"></span>
+          <span id="stEnv" class="hint" role="status" aria-live="polite"></span>
         </div>
         <details style="margin-top:8px"><summary class="hint">Se o envio falhar</summary>
           <p class="hint">Copie este texto e envie à professora por e-mail ou pelo SIGAA:</p>
-          <input id="fallback" readonly class="mono">
+          <input id="fallback" aria-label="Texto de reserva para copiar" readonly class="mono">
         </details>
       </div>
     </div>
@@ -189,6 +197,7 @@ cv.addEventListener('pointerdown',e=>{drag=[e.clientX,e.clientY];cv.setPointerCa
 cv.addEventListener('pointermove',e=>{if(!drag)return;
   S.yaw+= (e.clientX-drag[0])*0.008; S.pitch=Math.max(-1.4,Math.min(1.4,S.pitch+(e.clientY-drag[1])*0.008));
   drag=[e.clientX,e.clientY];desenha()});
+cv.addEventListener('keydown',e=>{const d={ArrowLeft:[-.1,0],ArrowRight:[.1,0],ArrowUp:[0,-.1],ArrowDown:[0,.1]}[e.key];if(!d)return;e.preventDefault();S.yaw+=d[0];S.pitch=Math.max(-1.4,Math.min(1.4,S.pitch+d[1]));desenha()});
 cv.addEventListener('pointerup',()=>{drag=null;cv.style.cursor='grab'});
 
 // ---------- treino ----------
@@ -233,7 +242,7 @@ function sliders(cont,key){
   const c=$(cont);c.innerHTML='';
   ['x','y','z'].forEach((e,k)=>{
     const d=document.createElement('div');d.className='slider';
-    d.innerHTML=`<span class="mono">${e}</span><input type="range" min="-2" max="2" step="0.5" value="${S[key][k]}"><span class="mono">${S[key][k]}</span>`;
+    d.innerHTML=`<span class="mono">${e}</span><input type="range" aria-label="${key==='w'?'ω':'v′'} componente ${e}" min="-2" max="2" step="0.5" value="${S[key][k]}"><span class="mono">${S[key][k]}</span>`;
     const inp=d.querySelector('input'),val=d.lastElementChild;
     inp.oninput=()=>{S[key][k]=+inp.value;val.textContent=inp.value;S.explorou++;atualizaCalc();desenha()};
     c.appendChild(d)});
@@ -245,7 +254,7 @@ function atualizaCalc(){
 $('sm').oninput=e=>{S.m=+e.target.value;$('vm').textContent=S.m;S.explorou++;atualizaCalc();desenha()};
 function modo(m){
   S.mode=m;$('treino').hidden=m!=='treino';$('explora').hidden=m!=='explora';
-  $('tTreino').classList.toggle('on',m==='treino');$('tExplora').classList.toggle('on',m==='explora');
+  $('tTreino').setAttribute('aria-pressed',m==='treino');$('tExplora').setAttribute('aria-pressed',m==='explora');$('tTreino').classList.toggle('on',m==='treino');$('tExplora').classList.toggle('on',m==='explora');
   if(m==='explora'){sliders('sw','w');sliders('sv','v');atualizaCalc()}
   desenha();
 }
