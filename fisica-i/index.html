@@ -29,8 +29,8 @@
   .abrir:hover{background:#EDB488}
   .abrir:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
   .passos{margin:1rem 0 1.2rem;padding:0;list-style:none;counter-reset:p;display:grid;gap:.5rem}
-  .passos li{counter-increment:p;display:grid;grid-template-columns:2rem 1fr;gap:.6rem;align-items:start;line-height:1.5}
-  .passos li::before{content:counter(p);display:grid;place-items:center;width:1.6rem;height:1.6rem;border-radius:50%;background:#26405F;color:var(--ink);font:600 .85rem "IBM Plex Sans",sans-serif}
+  .passos li{counter-increment:p;position:relative;padding-left:2.4rem;line-height:1.5;min-height:1.6rem}
+  .passos li::before{content:counter(p);position:absolute;left:0;top:.05rem;display:grid;place-items:center;width:1.6rem;height:1.6rem;border-radius:50%;background:#26405F;color:var(--ink);font:600 .85rem "IBM Plex Sans",sans-serif}
   .nota{font-size:.85rem;color:var(--dim)}
   footer{margin-top:1rem;padding-top:1.6rem;border-top:1px solid var(--line);font-size:.85rem;color:var(--dim)}
   footer a{color:var(--dim)}
@@ -80,12 +80,12 @@
     <p>Preveja a direção de <span class="mono">ω × v′</span> com a regra da mão direita e confira com a seta em 3D. É o aquecimento para a força de Coriolis.</p>
     <p>Cinco casos para treinar e um modo livre para explorar o que acontece quando os vetores são paralelos ou trocam de sinal.</p>
     <div class="formula">F<sub>C</sub> = −2m ω × v′</div>
-    <div><a class="abrir" href="produto-vetorial/">Abrir o app</a></div>
     <ol class="passos">
       <li><b>Treine</b> os 5 casos: preveja antes, confira depois.</li>
       <li><b>Explore</b> com seus próprios vetores.</li>
       <li><b>Registre</b> com o código que chegou ao seu e-mail e deixe um comentário.</li>
     </ol>
+    <div><a class="abrir" href="produto-vetorial/">Abrir o app</a></div>
   </section>
 
     <section class="app">
