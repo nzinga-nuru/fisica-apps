@@ -171,15 +171,22 @@
   @media (max-width: 420px){
     .wrap{ padding: 2.4rem 1.25rem 3rem; }
   }
+
+  footer nav{margin:0 0 .5rem}
+  footer nav a{color:var(--ink-dim,var(--dim));text-underline-offset:3px}
+  footer nav [aria-current]{color:var(--ink)}
+  footer p{margin:0;line-height:1.55}
+  .topo{margin:0 0 1.6rem;font-size:.9rem}
+  .topo a{display:inline-block;padding:.5rem 0;color:var(--ink-dim,var(--dim));text-underline-offset:3px}
 </style>
 </head>
 <body>
 <div class="wrap">
-
+  <p class="topo"><a href="../">← Todas as disciplinas</a></p>
   <header>
     <p class="eyebrow">Física II — UFRB</p>
     <h1>Oscilações e ondas, para ver em movimento</h1>
-    <p class="lede">Simulações que acompanham o que é discutido em aula. Cada uma abre em tela cheia, sem instalar nada — funciona no iPad e no celular.</p>
+    <p class="lede">Simulações que acompanham o que é discutido em aula. Cada uma abre em tela cheia, sem instalar nada — funciona em computador, tablet e celular.</p>
   </header>
 
   <svg class="onda" viewBox="0 0 600 44" preserveAspectRatio="none" aria-hidden="true">
@@ -214,8 +221,9 @@
     <div><a class="abrir" href="batimento/">Abrir simulação</a></div>
   </section>
 
-  <footer>
-    Material de apoio para as aulas de Física II. Mais aplicações entram aqui conforme forem ficando prontas.
+    <footer>
+    <nav aria-label="Navegação do site"><a href="../">Início</a> · <a href="../fisica-i/">Física I</a> · <span aria-current="page">Física II</span></nav>
+    <p>Material de apoio às aulas de Física — UFRB, CETEC. Aplicações interativas que acompanham os estudos dirigidos e as aulas; abrem no navegador, sem instalar nada.</p>
   </footer>
 
 </div>

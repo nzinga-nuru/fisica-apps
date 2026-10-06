@@ -176,6 +176,13 @@
   .disc:hover{border-color:var(--green)}
   .disc h2{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:1.5rem;margin:0 0 .3rem}
   .disc p{margin:0;color:var(--ink-dim);line-height:1.5}
+
+  footer nav{margin:0 0 .5rem}
+  footer nav a{color:var(--ink-dim,var(--dim));text-underline-offset:3px}
+  footer nav [aria-current]{color:var(--ink)}
+  footer p{margin:0;line-height:1.55}
+  .topo{margin:0 0 1.6rem;font-size:.9rem}
+  .topo a{display:inline-block;padding:.5rem 0;color:var(--ink-dim,var(--dim));text-underline-offset:3px}
 </style>
 </head>
 <body>
@@ -183,10 +190,14 @@
   <header>
     <p class="eyebrow">Física — UFRB</p>
     <h1>Aplicações interativas para as aulas</h1>
-    <p class="lede">Escolha a disciplina. Tudo abre no navegador, sem instalar nada.</p>
+    <p class="lede">Escolha a disciplina. Tudo abre no navegador e funciona em computador, tablet e celular.</p>
   </header>
   <a class="disc" href="fisica-i/"><h2>Física I</h2><p>Mecânica: leis de Newton, referenciais que giram, produto vetorial em 3D.</p></a>
   <a class="disc" href="fisica-ii/"><h2>Física II</h2><p>Oscilações e ondas: MHS, modos vibracionais, batimento.</p></a>
+  <footer>
+    <nav aria-label="Navegação do site"><span aria-current="page">Início</span> · <a href="fisica-i/">Física I</a> · <a href="fisica-ii/">Física II</a></nav>
+    <p>Material de apoio às aulas de Física — UFRB, CETEC. Aplicações interativas que acompanham os estudos dirigidos e as aulas; abrem no navegador, sem instalar nada.</p>
+  </footer>
 </div>
 </body>
 </html>

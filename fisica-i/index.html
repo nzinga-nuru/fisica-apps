@@ -32,20 +32,23 @@
   footer{margin-top:1rem;padding-top:1.6rem;border-top:1px solid var(--line);font-size:.85rem;color:var(--dim)}
   footer a{color:var(--dim)}
   @media(max-width:420px){.wrap{padding:2.4rem 1.25rem 3rem}}
+
+  footer nav{margin:0 0 .5rem}
+  footer nav a{color:var(--ink-dim,var(--dim));text-underline-offset:3px}
+  footer nav [aria-current]{color:var(--ink)}
+  footer p{margin:0;line-height:1.55}
+  .topo{margin:0 0 1.6rem;font-size:.9rem}
+  .topo a{display:inline-block;padding:.5rem 0;color:var(--ink-dim,var(--dim));text-underline-offset:3px}
 </style>
 </head>
 <body>
 <div class="wrap">
+  <p class="topo"><a href="../">← Todas as disciplinas</a></p>
   <header>
     <p class="eyebrow">Física I — UFRB</p>
     <h1>Mecânica, para ver em três dimensões</h1>
-    <p class="lede">Aplicações que acompanham os estudos dirigidos e as aulas. Cada uma abre em tela cheia, sem instalar nada — funciona no celular, no iPad e no computador.</p>
+    <p class="lede">Aplicações que acompanham os estudos dirigidos e as aulas. Cada uma abre em tela cheia, sem instalar nada — funciona em computador, tablet e celular.</p>
   </header>
-
-  <svg class="vetores" viewBox="0 0 600 56" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
-    <line x1="40" y1="44" x2="250" y2="44" stroke="#E0A070"/><line x1="40" y1="44" x2="40" y2="8" stroke="#7FB2E5"/>
-    <line x1="300" y1="44" x2="500" y2="44" stroke="#26405F"/><line x1="300" y1="44" x2="360" y2="14" stroke="#95A8C0"/>
-  </svg>
 
   <section class="app">
     <h2>Produto vetorial em 3D</h2>
@@ -57,8 +60,9 @@
     <p class="nota">Se você recebeu um código por e-mail, digite-o no fim da página (só para estatística de uso, não vale nota).</p>
   </section>
 
-  <footer>
-    Material de apoio para as aulas de Física I. Mais aplicações entram aqui conforme ficarem prontas. · <a href="../">Outras disciplinas</a>
+    <footer>
+    <nav aria-label="Navegação do site"><a href="../">Início</a> · <span aria-current="page">Física I</span> · <a href="../fisica-ii/">Física II</a></nav>
+    <p>Material de apoio às aulas de Física — UFRB, CETEC. Aplicações interativas que acompanham os estudos dirigidos e as aulas; abrem no navegador, sem instalar nada.</p>
   </footer>
 </div>
 </body>
