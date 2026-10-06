@@ -50,7 +50,6 @@
   .hero .vet{font:italic 600 24px "Newsreader",Georgia,serif}
   .hero .sub{font-size:15px}
   @media (max-width:520px){.hero .rot{font-size:19px}.hero .vet{font-size:32px}.hero .sub{font-size:20px}}
-  @media (prefers-reduced-motion:reduce){.hero .bola{display:none}}
 </style>
 </head>
 <body>
@@ -63,38 +62,16 @@
   </header>
 
   <svg class="hero" viewBox="0 0 600 300" role="img" aria-labelledby="hero-t hero-d">
-    <title id="hero-t">Plataforma que gira e a força de Coriolis</title>
-    <desc id="hero-d">Vista de cima, em perspectiva, de uma plataforma girando no sentido anti-horário, com ω apontando para cima. Uma bola lançada do centro para a borda segue, para quem gira junto, uma trajetória curva que se desvia para a direita; a força de Coriolis aponta para a direita do movimento.</desc>
-    <defs>
-      <marker id="pt-w" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#fbbf24"/></marker>
-      <marker id="pt-v" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5eead4"/></marker>
-      <marker id="pt-f" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#c4b5fd"/></marker>
-      <marker id="pt-d" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#95A8C0"/></marker>
-    </defs>
-    <!-- espessura e tampo da plataforma -->
-    <ellipse cx="300" cy="186" rx="235" ry="94" fill="#0b1522" stroke="#26405F"/>
-    <path d="M65,172 L65,186 M535,172 L535,186" stroke="#26405F" fill="none"/>
-    <ellipse cx="300" cy="172" rx="235" ry="94" fill="#16253A" stroke="#3b5a82" stroke-width="1.5"/>
-    <ellipse cx="300" cy="172" rx="59" ry="24" class="anel"/><ellipse cx="300" cy="172" rx="118" ry="47" class="anel"/><ellipse cx="300" cy="172" rx="176" ry="70" class="anel"/><line x1="300" y1="172" x2="535.0" y2="172.0" class="anel"/><line x1="300" y1="172" x2="466.2" y2="105.5" class="anel"/><line x1="300" y1="172" x2="300.0" y2="78.0" class="anel"/><line x1="300" y1="172" x2="133.8" y2="105.5" class="anel"/><line x1="300" y1="172" x2="65.0" y2="172.0" class="anel"/><line x1="300" y1="172" x2="133.8" y2="238.5" class="anel"/><line x1="300" y1="172" x2="300.0" y2="266.0" class="anel"/><line x1="300" y1="172" x2="466.2" y2="238.5" class="anel"/>
-    <!-- sentido de giro -->
-    <path d="M498.1,208.9 A 219 87 0 0 0 440.5,105.0" fill="none" stroke="#95A8C0" stroke-width="2" marker-end="url(#pt-d)"/>
-    <text x="437" y="97" class="rot dim">giro</text>
-    <!-- de fora: reta -->
-    <line x1="300" y1="172" x2="528.0" y2="172" stroke="#95A8C0" stroke-width="1.6" stroke-dasharray="6 6" marker-end="url(#pt-d)"/>
-    <text x="502" y="162" class="rot dim" text-anchor="end">de fora: reta</text>
-    <!-- girando junto: curva -->
-    <path d="M300.0,172.0 L303.6,172.0 L307.2,172.1 L310.8,172.3 L314.4,172.5 L317.9,172.8 L321.4,173.2 L324.9,173.6 L328.4,174.1 L331.8,174.6 L335.1,175.2 L338.4,175.9 L341.7,176.6 L344.9,177.4 L348.0,178.3 L351.0,179.2 L354.0,180.1 L356.8,181.1 L359.6,182.2 L362.3,183.4 L364.9,184.5 L367.4,185.8 L369.8,187.1 L372.0,188.4 L374.2,189.8 L376.2,191.2 L378.1,192.7 L379.9,194.2 L381.5,195.8 L383.0,197.4 L384.4,199.0 L385.6,200.7 L386.7,202.4 L387.6,204.2 L388.4,205.9 L389.0,207.7 L389.4,209.6 L389.7,211.4 L389.9,213.3 L389.8,215.2 L389.6,217.2 L389.2,219.1 L388.6,221.1 L387.9,223.0 L387.0,225.0 L385.9,227.0 L384.6,229.0 L383.2,231.0 L381.5,233.0 L379.7,235.0 L377.7,237.0 L375.5,239.0 L373.1,241.0 L370.5,243.0 L367.8,245.0 L364.8,246.9 L361.7,248.8 L358.4,250.8 L354.9,252.7 L351.2,254.5 L347.3,256.4" fill="none" stroke="#5eead4" stroke-width="3.2" stroke-linecap="round"/>
-    <circle r="7" fill="#5eead4" class="bola"><animateMotion dur="5s" repeatCount="indefinite" path="M300.0,172.0 L303.6,172.0 L307.2,172.1 L310.8,172.3 L314.4,172.5 L317.9,172.8 L321.4,173.2 L324.9,173.6 L328.4,174.1 L331.8,174.6 L335.1,175.2 L338.4,175.9 L341.7,176.6 L344.9,177.4 L348.0,178.3 L351.0,179.2 L354.0,180.1 L356.8,181.1 L359.6,182.2 L362.3,183.4 L364.9,184.5 L367.4,185.8 L369.8,187.1 L372.0,188.4 L374.2,189.8 L376.2,191.2 L378.1,192.7 L379.9,194.2 L381.5,195.8 L383.0,197.4 L384.4,199.0 L385.6,200.7 L386.7,202.4 L387.6,204.2 L388.4,205.9 L389.0,207.7 L389.4,209.6 L389.7,211.4 L389.9,213.3 L389.8,215.2 L389.6,217.2 L389.2,219.1 L388.6,221.1 L387.9,223.0 L387.0,225.0 L385.9,227.0 L384.6,229.0 L383.2,231.0 L381.5,233.0 L379.7,235.0 L377.7,237.0 L375.5,239.0 L373.1,241.0 L370.5,243.0 L367.8,245.0 L364.8,246.9 L361.7,248.8 L358.4,250.8 L354.9,252.7 L351.2,254.5 L347.3,256.4" calcMode="linear" keyPoints="0;1;1" keyTimes="0;0.8;1"/></circle>
-    <text x="341" y="278" class="rot" fill="#5eead4" text-anchor="end">girando junto: curva</text>
-    <!-- v' e F_C no ponto -->
-    <line x1="387.6" y1="204.2" x2="401.5" y2="234.9" stroke="#5eead4" stroke-width="2.6" marker-end="url(#pt-v)"/>
-    <text x="415" y="239" class="vet" fill="#5eead4">v′</text>
-    <line x1="387.6" y1="204.2" x2="289.2" y2="211.3" stroke="#c4b5fd" stroke-width="2.6" stroke-dasharray="7 5" marker-end="url(#pt-f)"/>
-    <text x="281" y="219" class="vet" fill="#c4b5fd" text-anchor="end">F<tspan class="sub" dy="4">C</tspan></text>
-    <!-- ω -->
-    <line x1="300" y1="172" x2="300" y2="52" stroke="#fbbf24" stroke-width="3.2" marker-end="url(#pt-w)"/>
-    <text x="310" y="68" class="vet" fill="#fbbf24">ω</text>
-    <circle cx="300" cy="172" r="4.5" fill="#fbbf24"/>
+    <title id="hero-t">Bloco num plano inclinado com as forças que agem nele</title>
+    <desc id="hero-d">Bloco em repouso num plano inclinado de ângulo θ. Do centro do bloco saem três setas: o peso, vertical para baixo; a normal, perpendicular à rampa; e o atrito, ao longo da rampa e para cima.</desc>
+    <defs><marker id="pt-w" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#fbbf24"/></marker><marker id="pt-n" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#5eead4"/></marker><marker id="pt-a" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#fb7185"/></marker></defs>
+    <polygon points="70,262 540,262 540,63.4" fill="#16253A" stroke="#3b5a82" stroke-width="1.5" stroke-linejoin="round"/>
+    <path d="M162,262 A 92 92 0 0 0 153.4,223.1" fill="none" stroke="#A3B4CA"/><text x="176" y="253" fill="#A3B4CA" class="vet" text-anchor="start">θ</text>
+    <g transform="translate(283.0 162.7) rotate(-25)"><rect x="-38" y="-44" width="76" height="44" rx="3" fill="#7FB2E5" stroke="#cfe1f5"/></g>
+    <line x1="272.0" y1="139.1" x2="272.0" y2="231.1" stroke="#fbbf24" stroke-width="3.4" stroke-linecap="round" marker-end="url(#pt-w)"/><text x="282" y="243" fill="#fbbf24" class="vet" text-anchor="start">F<tspan class="sub" dy="4">g</tspan></text>
+    <line x1="272.0" y1="139.1" x2="230.6" y2="50.3" stroke="#5eead4" stroke-width="3.4" stroke-linecap="round" marker-end="url(#pt-n)"/><text x="203" y="52" fill="#5eead4" class="vet" text-anchor="start">N</text>
+    <line x1="272.0" y1="139.1" x2="328.2" y2="112.9" stroke="#fb7185" stroke-width="3.4" stroke-linecap="round" marker-end="url(#pt-a)"/><text x="336" y="111" fill="#fb7185" class="vet" text-anchor="start">f</text>
+    <circle cx="272.0" cy="139.1" r="3.5" fill="#fff"/>
   </svg>
 
   <section class="app">
