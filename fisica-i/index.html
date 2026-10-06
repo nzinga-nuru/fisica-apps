@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Física I — Mecânica</title>
+<meta name="description" content="Aplicações interativas de Física I: leis de Newton, referenciais que giram.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0F1A28;--surface:#16253A;--line:#26405F;--ink:#ECEFF3;--dim:#95A8C0;--accent:#E0A070;--blue:#7FB2E5;color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;padding-top:env(safe-area-inset-top,0);background:var(--bg);color:var(--ink);font-family:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  .wrap{max-width:680px;margin:0 auto;padding:3.2rem 1.5rem 4rem}
+  .eyebrow{margin:0 0 .6rem;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.85rem;color:var(--accent)}
+  h1{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:clamp(2.1rem,5.4vw,3rem);line-height:1.15;letter-spacing:-.01em;margin:0 0 .9rem}
+  .lede{color:var(--dim);font-size:1.05rem;line-height:1.6;margin:0 0 2rem}
+  .vetores{display:block;width:100%;height:56px;margin:0 0 2rem}
+  .vetores line{stroke-width:2.5;stroke-linecap:round}
+  section.app{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:8px;padding:1.4rem 1.5rem;margin:0 0 1.2rem}
+  section.app h2{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:1.5rem;margin:0 0 .3rem}
+  .rotulo{margin:0 0 .9rem;font-family:"IBM Plex Mono",ui-monospace,monospace;font-size:.8rem;color:var(--blue)}
+  section.app p{line-height:1.6;margin:.6rem 0}
+  .formula{font-family:"IBM Plex Mono",ui-monospace,monospace;background:#0F1A28;border:1px solid var(--line);border-radius:6px;padding:.6rem .9rem;margin:.9rem 0;color:var(--blue);font-size:.95rem}
+  .abrir{display:inline-block;padding:.65rem 1.1rem;background:var(--accent);color:#1A1208;font-weight:600;font-size:.95rem;text-decoration:none;border-radius:6px}
+  .abrir:hover{background:#EDB488}
+  .abrir:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+  .nota{font-size:.85rem;color:var(--dim)}
+  footer{margin-top:1rem;padding-top:1.6rem;border-top:1px solid var(--line);font-size:.85rem;color:var(--dim)}
+  footer a{color:var(--dim)}
+  @media(max-width:420px){.wrap{padding:2.4rem 1.25rem 3rem}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow">Física I — UFRB</p>
+    <h1>Mecânica, para ver em três dimensões</h1>
+    <p class="lede">Aplicações que acompanham os estudos dirigidos e as aulas. Cada uma abre em tela cheia, sem instalar nada — funciona no celular, no iPad e no computador.</p>
+  </header>
+
+  <svg class="vetores" viewBox="0 0 600 56" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <line x1="40" y1="44" x2="250" y2="44" stroke="#E0A070"/><line x1="40" y1="44" x2="40" y2="8" stroke="#7FB2E5"/>
+    <line x1="300" y1="44" x2="500" y2="44" stroke="#26405F"/><line x1="300" y1="44" x2="360" y2="14" stroke="#95A8C0"/>
+  </svg>
+
+  <section class="app">
+    <h2>Produto vetorial em 3D</h2>
+    <p class="rotulo">Aula 3 · Referenciais que giram</p>
+    <p>Preveja a direção de <span class="mono">ω × v′</span> com a regra da mão direita e confira com a seta em 3D. É o aquecimento para a força de Coriolis.</p>
+    <p>Cinco casos para treinar e um modo livre para explorar o que acontece quando os vetores são paralelos ou trocam de sinal.</p>
+    <div class="formula">F<sub>C</sub> = −2m ω × v′</div>
+    <div><a class="abrir" href="produto-vetorial/">Abrir aplicação</a></div>
+    <p class="nota">Se você recebeu um código por e-mail, digite-o no fim da página (só para estatística de uso, não vale nota).</p>
+  </section>
+
+  <footer>
+    Material de apoio para as aulas de Física I. Mais aplicações entram aqui conforme ficarem prontas. · <a href="../">Outras disciplinas</a>
+  </footer>
+</div>
+</body>
+</html>

@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Produto vetorial — Coriolis</title>
+<style>
+  :root{--bg:#0a1220;--panel:#101b2e;--line:#1e2c47;--ink:#e7edf7;--dim:#8ea1c2;
+        --w:#fbbf24;--v:#5eead4;--c:#fb7185;--f:#c4b5fd;--ok:#86efac;--no:#fca5a5;}
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1180px;margin:0 auto;padding:20px 18px 40px}
+  header{display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line);padding-bottom:12px;margin-bottom:16px;flex-wrap:wrap;gap:8px}
+  header h1{font-size:1.25rem;margin:0}
+  header .sub{color:var(--dim);font-size:.82rem}
+  .grid{display:grid;grid-template-columns:1fr 380px;gap:16px}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
+  .panel h2{font-size:.72rem;text-transform:uppercase;letter-spacing:1.2px;color:var(--dim);margin:0 0 10px;font-weight:600}
+  canvas{width:100%;height:auto;aspect-ratio:1/1;max-height:640px;display:block;background:#0c1626;border-radius:8px;touch-action:none;cursor:grab}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:8px;font-size:.82rem}
+  .legend span::before{content:"";display:inline-block;width:22px;height:0;border-top:3px solid;vertical-align:middle;margin-right:5px}
+  .legend .lw::before{border-color:var(--w)} .legend .lv::before{border-color:var(--v)}
+  .legend .lc::before{border-color:var(--c)} .legend .lf::before{border-color:var(--f);border-top-style:dashed}
+  .tabs{display:flex;gap:6px;margin-bottom:12px}
+  .tabs button{flex:1}
+  button,select,input{font:inherit;color:var(--ink);background:#0c1626;border:1px solid var(--line);border-radius:7px;padding:7px 10px}
+  button{cursor:pointer} button:hover{border-color:var(--dim)}
+  button.on{background:#1b3a5c;border-color:#5b8cc0}
+  button.prim{background:#1f6f5f;border-color:#2fa58e;font-weight:600}
+  button:disabled{opacity:.45;cursor:default}
+  label{display:block;font-size:.82rem;color:var(--dim);margin:8px 0 3px}
+  .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .opts{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 6px}
+  .opts button{min-width:48px;padding:6px 8px}
+  .msg{margin-top:8px;padding:8px 10px;border-radius:7px;font-size:.9rem;border-left:4px solid var(--dim);background:#0c1626}
+  .msg.ok{border-color:var(--ok)} .msg.no{border-color:var(--no)}
+  .mono{font-family:Menlo,Consolas,monospace}
+  .slider{display:grid;grid-template-columns:70px 1fr 40px;align-items:center;gap:8px;font-size:.88rem}
+  .slider input{padding:0}
+  .prog{display:flex;gap:6px;margin:6px 0 10px}
+  .prog i{flex:1;height:8px;border-radius:4px;background:#1e2c47}
+  .prog i.d{background:#2fa58e}.prog i.cur{outline:2px solid var(--w)}
+  small,.hint{color:var(--dim);font-size:.8rem;line-height:1.4}
+  #envio input{width:100%} #envio .row input{flex:1}
+  code{background:#0c1626;padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Produto vetorial em 3D <span class="mono" style="color:var(--c)">ω × v′</span></h1>
+    <div class="sub"><a href="../" style="color:var(--dim)">← Física I</a> · Aula 3 · Referenciais que giram</div>
+  </header>
+
+  <div class="grid">
+    <div class="panel">
+      <h2>Arraste para girar a vista · sistema de mão direita (x, y, z)</h2>
+      <canvas id="cv" width="900" height="900"></canvas>
+      <div class="legend">
+        <span class="lw">ω (rotação)</span><span class="lv">v′ (velocidade no referencial que gira)</span>
+        <span class="lc">ω × v′</span><span class="lf">F<sub>C</sub> = −2m ω × v′</span>
+      </div>
+    </div>
+
+    <div>
+      <div class="panel">
+        <div class="tabs">
+          <button id="tTreino" class="on">Treinar (5 casos)</button>
+          <button id="tExplora">Explorar</button>
+        </div>
+
+        <div id="treino">
+          <div class="prog" id="prog"></div>
+          <div id="enun"></div>
+          <label>1. Direção de <b class="mono">ω × v′</b></label>
+          <div class="opts" id="optP"></div>
+          <label>2. Direção de <b class="mono">F<sub>C</sub> = −2m ω × v′</b> (m &gt; 0)</label>
+          <div class="opts" id="optF"></div>
+          <div class="row">
+            <button class="prim" id="bConf">Conferir</button>
+            <button id="bProx" disabled>Próximo caso →</button>
+          </div>
+          <div class="msg" id="msg">Preveja <b>antes</b> de ver: use a mão direita. A seta só aparece depois de conferir.</div>
+        </div>
+
+        <div id="explora" hidden>
+          <div class="slider"><span style="color:var(--w)">ω</span><span></span><span></span></div>
+          <div id="sw"></div>
+          <div class="slider"><span style="color:var(--v)">v′</span><span></span><span></span></div>
+          <div id="sv"></div>
+          <div class="slider"><span>m</span><input type="range" id="sm" min="0.5" max="3" step="0.5" value="1"><span id="vm">1</span></div>
+          <div class="msg mono" id="calc"></div>
+          <p class="hint">Teste: ω ∥ v′ dá zero? Troque o sinal de v′: F<sub>C</sub> inverte? Em qual plano fica sempre F<sub>C</sub>?</p>
+        </div>
+      </div>
+
+      <div class="panel" id="envio" style="margin-top:14px">
+        <h2>Registrar meu uso (código individual)</h2>
+        <p class="hint">Use o <b>código que a professora enviou ao seu e-mail</b>. Serve só para estatística de uso do app (quem testou e onde travou) e <b>não vale nota</b>.</p>
+        <label>Meu código</label>
+        <input id="codigo" placeholder="ex.: K7M-4QX" maxlength="8" autocomplete="off" autocapitalize="characters">
+        <div class="row" style="margin-top:10px">
+          <button class="prim" id="bEnv">Enviar resultado</button>
+          <span id="stEnv" class="hint"></span>
+        </div>
+        <details style="margin-top:8px"><summary class="hint">Se o envio falhar</summary>
+          <p class="hint">Copie este texto e envie à professora por e-mail ou pelo SIGAA:</p>
+          <input id="fallback" readonly class="mono">
+        </details>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ---------- configuração do coletor ----------
+// URL do Google Apps Script (implantação "App da Web") OU do coletor local de teste.
+// Vazio = só mostra o código de resultado (nada sai do navegador).
+const params = new URLSearchParams(location.search);
+const COLETOR_URL = params.get('coletor') || '';   // ex.: ?coletor=http://localhost:8935/coleta
+const APP_ID = 'F1-produto-vetorial-v1';
+
+// ---------- vetores ----------
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+const scale=(a,k)=>a.map(x=>x*k);
+const norm=a=>Math.hypot(...a);
+const CASOS=[ // ω, v′
+  {w:[0,0,1],v:[1,0,0],t:'ω = +ẑ, v′ = +x̂'},
+  {w:[0,0,1],v:[0,1,0],t:'ω = +ẑ, v′ = +ŷ'},
+  {w:[0,0,1],v:[-1,0,0],t:'ω = +ẑ, v′ = −x̂'},
+  {w:[0,1,0],v:[0,0,1],t:'ω = +ŷ, v′ = +ẑ'},
+  {w:[0,0,1],v:[0,0,1],t:'ω = +ẑ, v′ = +ẑ (paralelos)'}];
+const OPC=[['+x̂',[1,0,0]],['−x̂',[-1,0,0]],['+ŷ',[0,1,0]],['−ŷ',[0,-1,0]],['+ẑ',[0,0,1]],['−ẑ',[0,0,-1]],['zero',[0,0,0]]];
+const rotulo=a=>{const o=OPC.find(o=>o[1].every((x,i)=>Math.abs(x-a[i])<1e-9));return o?o[0]:'?'};
+
+// ---------- estado ----------
+const S={mode:'treino',i:0,yaw:-0.9,pitch:0.45,
+  w:[0,0,1],v:[1,0,0],m:1,show:false,
+  selP:null,selF:null,
+  reg:CASOS.map(()=>({tent:0,primeira:null,final:null,feito:false})),
+  explorou:0,t0:Date.now()};
+
+// ---------- 3D ----------
+const cv=document.getElementById('cv'),g=cv.getContext('2d');
+function proj(p){ // gira em z (yaw) e inclina (pitch); ortográfica
+  const cy=Math.cos(S.yaw),sy=Math.sin(S.yaw),cp=Math.cos(S.pitch),sp=Math.sin(S.pitch);
+  const x1=p[0]*cy-p[1]*sy, y1=p[0]*sy+p[1]*cy, z1=p[2];
+  const sx=x1, sy2=z1*cp + y1*sp;  // y1>0 = longe do observador (sobe na tela): sistema de mão direita
+  const k=cv.width/6.2;
+  return [cv.width/2+sx*k, cv.height/2 - sy2*k + 10];
+}
+function seta(a,b,cor,lw,tracejado,rot){
+  const A=proj(a),B=proj(b);
+  g.strokeStyle=g.fillStyle=cor;g.lineWidth=lw;g.setLineDash(tracejado?[12,8]:[]);
+  g.beginPath();g.moveTo(...A);g.lineTo(...B);g.stroke();g.setLineDash([]);
+  const ang=Math.atan2(B[1]-A[1],B[0]-A[0]),h=18;
+  if(Math.hypot(B[0]-A[0],B[1]-A[1])>6){
+    g.beginPath();g.moveTo(...B);
+    g.lineTo(B[0]-h*Math.cos(ang-.4),B[1]-h*Math.sin(ang-.4));
+    g.lineTo(B[0]-h*Math.cos(ang+.4),B[1]-h*Math.sin(ang+.4));g.closePath();g.fill();
+  }
+  if(rot){g.font='bold 24px Segoe UI, sans-serif';g.fillText(rot,B[0]+8,B[1]-8);}
+}
+function desenha(){
+  g.clearRect(0,0,cv.width,cv.height);
+  g.strokeStyle='#1e2c47';g.lineWidth=1;
+  for(let i=-3;i<=3;i++){ // grade no plano xy
+    let a=proj([i,-3,0]),b=proj([i,3,0]);g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();
+    a=proj([-3,i,0]);b=proj([3,i,0]);g.beginPath();g.moveTo(...a);g.lineTo(...b);g.stroke();
+  }
+  const eixo=(d,l)=>{seta([0,0,0],scale(d,3),'#5b6b87',2,false,l)};
+  eixo([1,0,0],'x');eixo([0,1,0],'y');eixo([0,0,1],'z');
+  const w=S.mode==='treino'?CASOS[S.i].w:S.w, v=S.mode==='treino'?CASOS[S.i].v:S.v;
+  const m=S.mode==='treino'?1:S.m;
+  const wxv=cross(w,v), F=scale(wxv,-2*m);
+  const esc=S.mode==='treino'?1.8:1;
+  seta([0,0,0],scale(w,esc),'#fbbf24',5,false,'ω');
+  seta([0,0,0],scale(v,esc),'#5eead4',5,false,'v′');
+  if(S.mode==='explora'||S.show){
+    if(norm(wxv)>1e-9){seta([0,0,0],scale(wxv,esc),'#fb7185',5,false,'ω×v′');
+      seta([0,0,0],scale(F,esc*0.9),'#c4b5fd',4,true,'F꜀');}
+    else{g.fillStyle='#c4b5fd';g.font='bold 24px Segoe UI, sans-serif';g.fillText('ω × v′ = 0 (nada a desenhar)',20,40);}
+  }
+}
+// arrastar para girar
+let drag=null;
+cv.addEventListener('pointerdown',e=>{drag=[e.clientX,e.clientY];cv.setPointerCapture(e.pointerId);cv.style.cursor='grabbing'});
+cv.addEventListener('pointermove',e=>{if(!drag)return;
+  S.yaw+= (e.clientX-drag[0])*0.008; S.pitch=Math.max(-1.4,Math.min(1.4,S.pitch+(e.clientY-drag[1])*0.008));
+  drag=[e.clientX,e.clientY];desenha()});
+cv.addEventListener('pointerup',()=>{drag=null;cv.style.cursor='grab'});
+
+// ---------- treino ----------
+const $=id=>document.getElementById(id);
+function botoes(cont,key){
+  const c=$(cont);c.innerHTML='';
+  OPC.forEach(([r,vec])=>{const b=document.createElement('button');b.textContent=r;
+    b.onclick=()=>{S[key]=vec;[...c.children].forEach(x=>x.classList.remove('on'));b.classList.add('on')};c.appendChild(b)});
+}
+function caso(i){
+  S.i=i;S.selP=S.selF=null;S.show=S.reg[i].feito;
+  const c=CASOS[i];
+  $('enun').innerHTML=`<b>Caso ${i+1} de ${CASOS.length}:</b> <span class="mono">${c.t}</span>`;
+  botoes('optP','selP');botoes('optF','selF');
+  $('bConf').disabled=S.reg[i].feito;$('bProx').disabled=!S.reg[i].feito||i===CASOS.length-1;
+  $('msg').className='msg';$('msg').innerHTML=S.reg[i].feito?'Caso concluído.':'Preveja <b>antes</b> de ver: use a mão direita. A seta só aparece depois de conferir.';
+  prog();desenha();
+}
+function prog(){$('prog').innerHTML=CASOS.map((_,i)=>`<i class="${S.reg[i].feito?'d':''} ${i===S.i?'cur':''}"></i>`).join('')}
+$('bConf').onclick=()=>{
+  if(!S.selP||!S.selF){$('msg').className='msg';$('msg').textContent='Escolha uma direção nas duas linhas (1 e 2).';return}
+  const c=CASOS[S.i],r=S.reg[S.i],P=cross(c.w,c.v),F=scale(P,-2);
+  const igual=(a,b)=>a.every((x,k)=>Math.sign(x)===Math.sign(b[k]));
+  const okP=igual(S.selP,P),okF=igual(S.selF,F);
+  r.tent++;if(r.primeira===null)r.primeira=(okP&&okF);
+  r.final=[rotulo(S.selP),rotulo(S.selF)];
+  if(okP&&okF||r.tent>=2){
+    r.feito=true;S.show=true;
+    $('msg').className='msg '+(okP&&okF?'ok':'no');
+    $('msg').innerHTML=(okP&&okF?'Certo! ':'Resposta correta: ')+`ω×v′ = <b>${rotulo(P)}</b>, F<sub>C</sub> ∝ <b>${rotulo(F)}</b>. `+(okP&&okF?'':'Olhe a seta e refaça a regra da mão direita: dedos de ω para v′.');
+    $('bConf').disabled=true;$('bProx').disabled=S.i===CASOS.length-1;
+  }else{
+    $('msg').className='msg no';
+    $('msg').innerHTML=(okP?'ω×v′ está certo; ':'ω×v′ não confere; ')+(okF?'F<sub>C</sub> certo.':'F<sub>C</sub> não confere (lembre do sinal −).')+' Tente de novo, uma vez mais.';
+  }
+  prog();desenha();
+};
+$('bProx').onclick=()=>caso(S.i+1);
+
+// ---------- explorar ----------
+function sliders(cont,key){
+  const c=$(cont);c.innerHTML='';
+  ['x','y','z'].forEach((e,k)=>{
+    const d=document.createElement('div');d.className='slider';
+    d.innerHTML=`<span class="mono">${e}</span><input type="range" min="-2" max="2" step="0.5" value="${S[key][k]}"><span class="mono">${S[key][k]}</span>`;
+    const inp=d.querySelector('input'),val=d.lastElementChild;
+    inp.oninput=()=>{S[key][k]=+inp.value;val.textContent=inp.value;S.explorou++;atualizaCalc();desenha()};
+    c.appendChild(d)});
+}
+function atualizaCalc(){
+  const P=cross(S.w,S.v),F=scale(P,-2*S.m),f=a=>'('+a.map(x=>(+x.toFixed(2))).join(', ')+')';
+  $('calc').innerHTML=`ω×v′ = ${f(P)}<br>F<sub>C</sub> = ${f(F)} (m=${S.m})`;
+}
+$('sm').oninput=e=>{S.m=+e.target.value;$('vm').textContent=S.m;S.explorou++;atualizaCalc();desenha()};
+function modo(m){
+  S.mode=m;$('treino').hidden=m!=='treino';$('explora').hidden=m!=='explora';
+  $('tTreino').classList.toggle('on',m==='treino');$('tExplora').classList.toggle('on',m==='explora');
+  if(m==='explora'){sliders('sw','w');sliders('sv','v');atualizaCalc()}
+  desenha();
+}
+$('tTreino').onclick=()=>modo('treino');$('tExplora').onclick=()=>modo('explora');
+
+// ---------- coleta ----------
+try{ $('codigo').value=localStorage.getItem('codigo')||'' }catch(e){}
+const normaliza=c=>{c=c.toUpperCase().replace(/[^A-Z0-9]/g,'');return c.length===6?c.slice(0,3)+'-'+c.slice(3):c};
+function payload(){
+  return {app:APP_ID,codigo:normaliza($('codigo').value),
+    casos:S.reg.map((r,i)=>({caso:i+1,tentativas:r.tent,acertouNaPrimeira:r.primeira,resposta:r.final,concluido:r.feito})),
+    explorou:S.explorou,duracaoSeg:Math.round((Date.now()-S.t0)/1000),
+    enviadoEm:new Date().toISOString()};
+}
+function fallback(p){ try{$('fallback').value='FIS1-'+btoa(unescape(encodeURIComponent(JSON.stringify(p))))}catch(e){} }
+$('bEnv').onclick=async()=>{
+  const p=payload(),st=$('stEnv');
+  if(!/^[A-Z2-9]{3}-[A-Z2-9]{3}$/.test(p.codigo)){st.textContent='Código no formato ABC-123 (o que veio no e-mail).';return}
+  try{localStorage.setItem('codigo',p.codigo)}catch(e){}
+  fallback(p);
+  if(!COLETOR_URL){st.textContent='Coletor não configurado: use o código em "Se o envio falhar".';return}
+  st.textContent='Enviando…';$('bEnv').disabled=true;
+  try{
+    // text/plain evita "preflight" CORS (necessário para Apps Script)
+    const r=await fetch(COLETOR_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify(p)});
+    let ok=r.ok,erro='';
+    try{const j=await r.json();ok=j.ok===true;erro=j.erro||''}catch(e){}
+    st.textContent=ok?'Enviado ✔ ('+new Date().toLocaleTimeString()+')':(/desconhecido/.test(erro)?'Código não reconhecido: confira o e-mail.':'Falhou. Use o código de reserva.');
+  }catch(e){st.textContent='Sem conexão. Use o código de reserva.'}
+  $('bEnv').disabled=false;
+};
+
+caso(0);modo('treino');
+</script>
+</body>
+</html>

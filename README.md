@@ -6,10 +6,14 @@ Simulações interativas em HTML/JS para as aulas de física — pensado para de
 
 ```
 fisica-apps/
-├── index.html                       ← página inicial, lista os apps por disciplina
-└── fisica-ii/
-    ├── mhs/index.html                — MHS, círculo de referência
-    └── modos-vibracionais/index.html — Onda estacionária, modos normais
+├── index.html                       ← escolha da disciplina
+├── fisica-i/
+│   ├── index.html                   — página de Física I
+│   └── produto-vetorial/index.html  — produto vetorial 3D (ω×v′, Coriolis) + registro de uso
+├── fisica-ii/
+│   ├── index.html                   — página de Física II
+│   ├── mhs/  modos-vibracionais/  batimento/
+└── coleta/                          — coletor (Apps Script + versão local de teste); sem dados de alunos
 ```
 
 Cada app é uma pasta com seu próprio `index.html` autocontido (sem build step, sem dependências de servidor). Novas disciplinas entram como `fisica-i/`, `fisica-iii/`, `fisica-iv/` no mesmo padrão; novos apps de uma disciplina entram como mais uma subpasta dentro dela.

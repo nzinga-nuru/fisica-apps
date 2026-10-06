@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Física — Aplicações interativas (UFRB)</title>
-<meta name="description" content="Aplicações interativas para as aulas de Física I e II.">
+<title>Física II — Oscilações e Ondas</title>
+<meta name="description" content="Simulações interativas de MHS, modos vibracionais e batimento para Física II.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,500;0,600;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -170,22 +170,53 @@
   @media (max-width: 420px){
     .wrap{ padding: 2.4rem 1.25rem 3rem; }
   }
-
-  .disc{display:block;text-decoration:none;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:1.3rem 1.5rem;margin:0 0 1rem}
-  .disc:hover{border-color:var(--green)}
-  .disc h2{font-family:"Newsreader",Georgia,serif;font-weight:600;font-size:1.5rem;margin:0 0 .3rem}
-  .disc p{margin:0;color:var(--ink-dim);line-height:1.5}
 </style>
 </head>
 <body>
 <div class="wrap">
+
   <header>
-    <p class="eyebrow">Física — UFRB</p>
-    <h1>Aplicações interativas para as aulas</h1>
-    <p class="lede">Escolha a disciplina. Tudo abre no navegador, sem instalar nada.</p>
+    <p class="eyebrow">Física II — UFRB</p>
+    <h1>Oscilações e ondas, para ver em movimento</h1>
+    <p class="lede">Simulações que acompanham o que é discutido em aula. Cada uma abre em tela cheia, sem instalar nada — funciona no iPad e no celular.</p>
   </header>
-  <a class="disc" href="fisica-i/"><h2>Física I</h2><p>Mecânica: leis de Newton, referenciais que giram, produto vetorial em 3D.</p></a>
-  <a class="disc" href="fisica-ii/"><h2>Física II</h2><p>Oscilações e ondas: MHS, modos vibracionais, batimento.</p></a>
+
+  <svg class="onda" viewBox="0 0 600 44" preserveAspectRatio="none" aria-hidden="true">
+    <path d="M0,22 C 50,2 100,2 150,22 C 200,42 250,42 300,22 C 350,2 400,2 450,22 C 500,42 550,42 600,22" />
+    <path class="ativa" d="M0,22 C 50,2 100,2 150,22 C 200,42 250,42 300,22 C 350,2 400,2 450,22 C 500,42 550,42 600,22" />
+  </svg>
+
+  <section class="app">
+    <h2>MHS — círculo de referência</h2>
+    <p class="rotulo">Sistema massa-mola</p>
+    <p>Um corpo preso a uma mola ideal, deslocado da posição de equilíbrio, oscila sob uma força restauradora proporcional ao deslocamento: <span class="mono">F = −kx</span>. A solução dessa equação é o próprio MHS.</p>
+    <p>A simulação mostra por que a projeção de um ponto em movimento circular uniforme sobre um eixo é, ela mesma, um MHS — a mesma construção usada para justificar amplitude, fase e velocidade angular <span class="mono">ω</span>.</p>
+    <div class="formula">x(t) = A cos(ωt + φ), &nbsp; ω = √(k/m)</div>
+    <div><a class="abrir" href="mhs/">Abrir simulação</a></div>
+  </section>
+
+  <section class="app">
+    <h2>Modos vibracionais</h2>
+    <p class="rotulo">Corda fixa nas duas extremidades</p>
+    <p>Duas ondas idênticas se propagando em sentidos opostos numa corda presa nas duas pontas se somam e formam um padrão que não se desloca: uma onda estacionária, com nós parados e ventres de oscilação máxima.</p>
+    <p>Só alguns comprimentos de onda cabem inteiros entre as extremidades fixas — por isso a corda só vibra em frequências específicas, os harmônicos. A simulação deixa ajustar o modo <span class="mono">n</span> e ver o padrão mudar em tempo real.</p>
+    <div class="formula">λₙ = 2L/n, &nbsp; fₙ = n·f₁, &nbsp; n = 1, 2, 3, …</div>
+    <div><a class="abrir" href="modos-vibracionais/">Abrir simulação</a></div>
+  </section>
+
+  <section class="app">
+    <h2>Batimento</h2>
+    <p class="rotulo">Afinando por ouvido — com som</p>
+    <p>Um diapasão de 440 Hz e uma corda de frequência próxima somam suas ondas no ar. Em vez de duas alturas distintas, o ouvido percebe um único tom pulsando em intensidade — o batimento.</p>
+    <p>A simulação toca as duas frequências de verdade (Web Audio) e mostra, lado a lado, a onda de pressão real e a envoltória lenta que é o que você efetivamente ouve. Ajuste a corda até o pulsar sumir, como um afinador faria.</p>
+    <div class="formula">f_bat = |f₁ − f₂|</div>
+    <div><a class="abrir" href="batimento/">Abrir simulação</a></div>
+  </section>
+
+  <footer>
+    Material de apoio para as aulas de Física II. Mais aplicações entram aqui conforme forem ficando prontas.
+  </footer>
+
 </div>
 </body>
 </html>
