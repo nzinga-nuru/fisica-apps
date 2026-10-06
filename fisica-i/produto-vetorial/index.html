@@ -105,9 +105,13 @@
 
       <div class="panel" id="envio" style="margin-top:14px">
         <h2>Registrar meu uso (código individual)</h2>
-        <p class="hint">Use o <b>código que a professora enviou ao seu e-mail</b>. Serve só para estatística de uso do app (quem testou e onde travou) e <b>não vale nota</b>.</p>
+        <p class="hint">Use o <b>código que a professora enviou ao seu e-mail</b>. O envio registra que você testou o app e onde travou. Não escreva seu nome.</p>
         <label for="codigo">Meu código</label>
         <input id="codigo" name="codigo" placeholder="ex.: K7M-4QX…" maxlength="9" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="send">
+        <label for="util">O app ajudou a entender o produto vetorial? (opcional)</label>
+        <select id="util" name="util"><option value="">—</option><option value="1">1 · não ajudou</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5 · ajudou muito</option></select>
+        <label for="comentario">Comentário: o que travou, o que melhorar (opcional)</label>
+        <textarea id="comentario" name="comentario" maxlength="500" rows="3" autocomplete="off" placeholder="Escreva aqui…" style="width:100%;font:inherit;color:var(--ink);background:#0c1626;border:1px solid var(--line);border-radius:7px;padding:8px 10px;resize:vertical"></textarea>
         <div class="row" style="margin-top:10px">
           <button class="prim" id="bEnv">Enviar resultado</button>
           <span id="stEnv" class="hint" role="status" aria-live="polite"></span>
@@ -266,7 +270,7 @@ const normaliza=c=>{c=c.toUpperCase().replace(/[^A-Z0-9]/g,'');return c.length==
 function payload(){
   return {app:APP_ID,codigo:normaliza($('codigo').value),
     casos:S.reg.map((r,i)=>({caso:i+1,tentativas:r.tent,acertouNaPrimeira:r.primeira,resposta:r.final,concluido:r.feito})),
-    explorou:S.explorou,duracaoSeg:Math.round((Date.now()-S.t0)/1000),
+    util:+$('util').value||null,comentario:$('comentario').value.trim().slice(0,500),explorou:S.explorou,duracaoSeg:Math.round((Date.now()-S.t0)/1000),
     enviadoEm:new Date().toISOString()};
 }
 function fallback(p){ try{$('fallback').value='FIS1-'+btoa(unescape(encodeURIComponent(JSON.stringify(p))))}catch(e){} }

@@ -10,7 +10,7 @@ AQUI = os.path.dirname(os.path.abspath(__file__))
 ARQ = os.path.join(AQUI, "respostas.csv")
 CODIGOS = os.path.join(AQUI, "codigos_teste.csv")
 CAMPOS = ["recebido_em", "app", "semestre", "turma", "codigo", "acertos_1a", "tentativas_total", "concluidos",
-          "explorou", "duracao_seg", "casos_json"]
+          "explorou", "duracao_seg", "util", "comentario", "casos_json"]
 
 def turmas():
     with open(CODIGOS, newline="", encoding="utf-8") as f:
@@ -42,7 +42,7 @@ class H(BaseHTTPRequestHandler):
                             sum(1 for x in c if x.get("acertouNaPrimeira")),
                             sum(x.get("tentativas", 0) for x in c),
                             sum(1 for x in c if x.get("concluido")),
-                            p.get("explorou"), p.get("duracaoSeg"), json.dumps(c, ensure_ascii=False)])
+                            p.get("explorou"), p.get("duracaoSeg"), p.get("util") or "", str(p.get("comentario") or "")[:500], json.dumps(c, ensure_ascii=False)])
             out, code = {"ok": True}, 200
         except Exception as e:
             out, code = {"ok": False, "erro": str(e)}, 400
