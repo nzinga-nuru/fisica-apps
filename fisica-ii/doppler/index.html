@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Efeito Doppler — Física II</title>
+<meta name="description" content="Simulação do efeito Doppler: fonte e ouvinte em movimento, ondas de choque e a ambulância que passa, com som.">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+  :root{
+    --bg:#eef2f4;
+    --panel:#ffffff;
+    --ink:#16232e;
+    --ink-dim:#546472;
+    --grid:#d6dee3;
+    --axis:#9fb0bb;
+    --accent:#2f6fe0;
+    --wave1:#2f6fe0;
+    --wave2:#e0762f;
+    --resultant:#c22a63;
+    --border:#d6dee3;
+    --track:#dbe2e6;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0e161f;
+      --panel:#141f2b;
+      --ink:#e9eef2;
+      --ink-dim:#93a4b2;
+      --grid:#22323f;
+      --axis:#3a4e5c;
+      --accent:#5f9bff;
+      --wave1:#5f9bff;
+      --wave2:#ff9d5c;
+      --resultant:#ff5c93;
+      --border:#22323f;
+      --track:#1c2833;
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0e161f;
+    --panel:#141f2b;
+    --ink:#e9eef2;
+    --ink-dim:#93a4b2;
+    --grid:#22323f;
+    --axis:#3a4e5c;
+    --accent:#5f9bff;
+    --wave1:#5f9bff;
+    --wave2:#ff9d5c;
+    --resultant:#ff5c93;
+    --border:#22323f;
+    --track:#1c2833;
+    color-scheme: dark;
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:"IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    padding-inline:16px;
+    padding-block:28px;
+    display:flex;
+    justify-content:center;
+  }
+  .page{
+    width:100%;
+    max-width:960px;
+    display:flex;
+    flex-direction:column;
+    gap:22px;
+  }
+  header h1{
+    font-family:"Newsreader", Georgia, "Times New Roman", serif;
+    font-weight:600;
+    font-size:clamp(1.6rem, 1.1rem + 2vw, 2.3rem);
+    margin:0 0 6px 0;
+    letter-spacing:-0.01em;
+  }
+  header p{
+    margin:0;
+    color:var(--ink-dim);
+    font-size:0.98rem;
+    max-width:64ch;
+    line-height:1.5;
+  }
+
+  .stage{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:18px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  .canvas-wrap{
+    position:relative;
+    width:100%;
+    aspect-ratio: 16 / 6;
+    border-radius:10px;
+    overflow:hidden;
+    background:
+      linear-gradient(var(--grid) 1px, transparent 1px) 0 0 / 100% 25%,
+      var(--panel);
+    border:1px solid var(--border);
+  }
+  .canvas-wrap.zoom{ aspect-ratio: 16 / 4; }
+  canvas{
+    display:block;
+    width:100%;
+    height:100%;
+  }
+
+  .zoom-label{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:0.76rem;
+    color:var(--ink-dim);
+    margin:-4px 0 0 2px;
+  }
+
+  .transport{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    flex-wrap:wrap;
+  }
+  .play-btn{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    background:var(--accent);
+    color:#fff;
+    border:none;
+    border-radius:999px;
+    padding:9px 18px;
+    font-size:0.92rem;
+    font-weight:600;
+    font-family:inherit;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+  .play-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; }
+  .play-btn svg{ width:14px; height:14px; }
+
+  .pulse-wrap{
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    font-size:0.82rem;
+    color:var(--ink-dim);
+    white-space:nowrap;
+  }
+  .pulse-dot{
+    width:16px; height:16px;
+    border-radius:50%;
+    background:var(--resultant);
+    box-shadow:0 0 0 0 var(--resultant);
+    flex-shrink:0;
+  }
+
+  .legend{
+    display:flex;
+    flex-wrap:wrap;
+    gap:14px;
+    margin-left:auto;
+    font-size:0.82rem;
+    color:var(--ink-dim);
+  }
+  .legend span{ display:inline-flex; align-items:center; gap:6px; white-space:nowrap; }
+  .swatch{ width:16px; height:0; border-top-width:3px; border-top-style:solid; display:inline-block; }
+  .swatch.dashed{ border-top-style:dashed; }
+
+  .panels{
+    display:grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap:16px;
+  }
+  @media (max-width: 640px){
+    .panels{ grid-template-columns: 1fr; }
+  }
+
+  .panel{
+    background:var(--panel);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:18px 20px;
+  }
+  .panel h2{
+    font-family:"Newsreader", Georgia, serif;
+    font-size:1.02rem;
+    font-weight:600;
+    margin:0 0 14px 0;
+  }
+
+  .control{ margin-bottom:16px; }
+  .control:last-child{ margin-bottom:0; }
+  .control-label{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    font-size:0.86rem;
+    color:var(--ink-dim);
+    margin-bottom:6px;
+  }
+  .control-label b{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    color:var(--ink);
+    font-weight:600;
+    font-variant-numeric:tabular-nums;
+  }
+  input[type="range"]{
+    -webkit-appearance:none;
+    width:100%;
+    height:4px;
+    border-radius:999px;
+    background:var(--track);
+    outline-offset:4px;
+  }
+  input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none;
+    width:17px; height:17px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid var(--panel);
+    box-shadow:0 0 0 1px var(--accent);
+    cursor:pointer;
+    margin-top:-6.5px;
+  }
+  input[type="range"]::-moz-range-thumb{
+    width:15px; height:15px;
+    border-radius:50%;
+    background:var(--accent);
+    border:2px solid var(--panel);
+    box-shadow:0 0 0 1px var(--accent);
+    cursor:pointer;
+  }
+  input[type="range"]::-moz-range-track{
+    height:4px; border-radius:999px; background:var(--track);
+  }
+
+  .fixed-readout{
+    display:flex;
+    align-items:baseline;
+    justify-content:space-between;
+    background:var(--track);
+    border-radius:10px;
+    padding:9px 12px;
+    font-size:0.86rem;
+    color:var(--ink-dim);
+  }
+  .fixed-readout b{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    color:var(--ink);
+    font-size:0.98rem;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .nudge-row{
+    display:flex;
+    gap:8px;
+  }
+  .nudge-btn{
+    flex:1;
+    background:var(--track);
+    color:var(--ink);
+    border:1px solid var(--border);
+    border-radius:8px;
+    padding:8px 10px;
+    font-size:0.84rem;
+    font-family:inherit;
+    font-weight:600;
+    cursor:pointer;
+  }
+  .nudge-btn:hover{ border-color:var(--accent); }
+  .nudge-btn:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .toggle-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    padding-block:9px;
+    border-top:1px solid var(--border);
+    margin-top:9px;
+  }
+  .toggle-row label{ font-size:0.9rem; cursor:pointer; }
+  .toggle-row .hint{ display:block; font-size:0.78rem; color:var(--ink-dim); margin-top:2px; }
+
+  .switch{
+    position:relative;
+    width:38px; height:22px;
+    flex-shrink:0;
+  }
+  .switch input{
+    position:absolute; inset:0; opacity:0; margin:0; cursor:pointer; z-index:1;
+  }
+  .switch .track{
+    position:absolute; inset:0;
+    background:var(--track);
+    border-radius:999px;
+    transition:background .15s ease;
+  }
+  .switch .thumb{
+    position:absolute; top:3px; left:3px;
+    width:16px; height:16px;
+    border-radius:50%;
+    background:var(--panel);
+    box-shadow:0 1px 2px rgba(0,0,0,.25);
+    transition:transform .15s ease;
+  }
+  .switch input:checked + .track{ background:var(--accent); }
+  .switch input:checked ~ .thumb{ transform:translateX(16px); }
+  .switch input:focus-visible ~ .track{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  .formula{
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:0.98rem;
+    background:var(--track);
+    border-radius:10px;
+    padding:12px 14px;
+    margin-bottom:14px;
+    overflow-x:auto;
+    font-variant-numeric:tabular-nums;
+  }
+  .readout-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px 16px;
+  }
+  .readout-grid dt{
+    font-size:0.78rem;
+    color:var(--ink-dim);
+    margin:0;
+  }
+  .readout-grid dd{
+    margin:2px 0 0 0;
+    font-family:"IBM Plex Mono", ui-monospace, monospace;
+    font-size:0.98rem;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .story{
+    margin-top:16px;
+    padding-top:14px;
+    border-top:1px solid var(--border);
+    font-size:0.84rem;
+    line-height:1.55;
+    color:var(--ink-dim);
+  }
+  .story b{ color:var(--ink); }
+
+  footer{
+    text-align:center;
+    font-size:0.78rem;
+    color:var(--ink-dim);
+  }
+
+  .f2-topbar{
+    display:flex;
+    align-items:center;
+    font-size:0.85rem;
+  }
+  .f2-topbar a{
+    color:var(--ink-dim);
+    text-decoration:none;
+    display:inline-flex;
+    align-items:center;
+    gap:6px;
+  }
+  .f2-topbar a:hover{ color:var(--accent); }
+  .f2-topbar a:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
+
+  .f2-nextbar{
+    font-size:0.85rem;
+    text-align:right;
+    padding-top:14px;
+    border-top:1px solid var(--border);
+  }
+  .f2-nextbar a{ color:var(--accent); text-decoration:none; font-weight:600; }
+  .f2-nextbar a:hover{ text-decoration:underline; }
+  .f2-nextbar a:focus-visible{ outline:2px solid var(--accent); outline-offset:3px; border-radius:4px; }
+
+  @media (prefers-reduced-motion: reduce){
+    .play-btn{ scroll-behavior:auto; }
+  }
+  .tabs{display:flex;gap:8px;flex-wrap:wrap;}
+  .tab{background:var(--panel);color:var(--ink-dim);border:1px solid var(--border);border-radius:999px;padding:9px 16px;font:600 0.88rem inherit;font-family:inherit;cursor:pointer;}
+  .tab.on{background:var(--accent);color:#fff;border-color:var(--accent);}
+  .tab:focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+  .canvas-wrap.wide{aspect-ratio:2/1;background:var(--panel);}
+  .canvas-wrap.map{aspect-ratio:16/5;background:var(--panel);}
+  .canvas-wrap.graph{aspect-ratio:16/6;background:var(--panel);}
+  .play-btn.ghost{background:var(--track);color:var(--ink);}
+  .inline{display:inline-flex;align-items:center;gap:6px;font-size:0.84rem;color:var(--ink-dim);}
+  select{font:inherit;color:var(--ink);background:var(--track);border:1px solid var(--border);border-radius:8px;padding:6px 8px;}
+  .dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
+  .subval{font-size:0.78rem;color:var(--ink-dim);margin-top:5px;min-height:1.1em;}
+  .presets{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px;}
+  .presets .nudge-btn{flex:0 1 auto;}
+  .meas{width:100%;border-collapse:collapse;font-size:0.84rem;margin-top:2px;}
+  .meas th,.meas td{padding:7px 6px;border-bottom:1px solid var(--border);text-align:left;font-variant-numeric:tabular-nums;}
+  .meas thead th{font-size:0.74rem;color:var(--ink-dim);font-weight:500;}
+  .meas td{font-family:"IBM Plex Mono",ui-monospace,monospace;}
+  .meas .ok{color:#1f8a4c;font-weight:600;}
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="f2-topbar"><a href="../">← Física II</a></div>
+
+  <header>
+    <h1>Efeito Doppler — fonte, ouvinte e ondas de choque</h1>
+    <p>A fonte emite sempre a mesma frequência, mas quem escuta mede outra quando há movimento relativo. Mexa nas velocidades, <b>preveja</b> o que cada ouvinte vai medir e confira com a contagem de frentes de onda e com a fórmula. Passe de Mach&nbsp;1 e veja o cone de choque.</p>
+  </header>
+
+  <div class="tabs" role="tablist">
+    <button class="tab on" id="tab1" role="tab" aria-selected="true" type="button">1 · Fonte e ouvintes na mesma linha</button>
+    <button class="tab" id="tab2" role="tab" aria-selected="false" type="button">2 · A ambulância que passa</button>
+  </div>
+
+  <!-- ============ CENÁRIO 1 ============ -->
+  <section id="sc1">
+    <div class="stage">
+      <div class="canvas-wrap wide"><canvas id="cv1" role="img" aria-label="Frentes de onda emitidas por uma fonte em movimento, com dois ouvintes, A à frente e B atrás"></canvas></div>
+      <div class="zoom-label" id="note1">animação em câmera lenta: 3 frentes por segundo representam a nota de 440&nbsp;Hz</div>
+      <div class="transport">
+        <button class="play-btn" id="listenBtn" type="button">
+          <svg viewBox="0 0 16 16" fill="currentColor" id="lIcon"><path d="M4 2.5v11l9-5.5-9-5.5z"/></svg>
+          <span id="listenLabel">Ouvir</span>
+        </button>
+        <label class="inline">ouvinte:
+          <select id="listener"><option value="A">A (à frente)</option><option value="B">B (atrás)</option></select>
+        </label>
+        <button class="play-btn ghost" id="restartBtn" type="button">Reiniciar</button>
+        <button class="play-btn ghost" id="freezeBtn" type="button">Pausar</button>
+        <div class="legend">
+          <span><i class="dot" style="background:var(--wave2)"></i>fonte</span>
+          <span><i class="dot" style="background:var(--ink)"></i>ouvintes</span>
+          <span><i class="swatch" style="border-color:var(--wave1)"></i>frentes de onda</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="panels">
+      <div class="panel">
+        <h2>Controles</h2>
+        <div class="control">
+          <div class="control-label"><span>Velocidade da fonte, <i>v<sub>F</sub></i>/<i>v</i> (número de Mach)</span><b id="mVal">0,50</b></div>
+          <input type="range" id="mSlider" min="0" max="2" step="0.05" value="0.5" aria-label="Velocidade da fonte em unidades da velocidade do som">
+          <div class="subval" id="mSub"></div>
+        </div>
+        <div class="control">
+          <div class="control-label"><span>Velocidade dos ouvintes, <i>v<sub>D</sub></i>/<i>v</i> (+ = para a direita)</span><b id="dVal">0,00</b></div>
+          <input type="range" id="dSlider" min="-0.5" max="0.5" step="0.05" value="0" aria-label="Velocidade dos ouvintes em unidades da velocidade do som">
+          <div class="subval" id="dSub"></div>
+        </div>
+        <div class="control">
+          <div class="control-label"><span>Volume</span><b id="vVal">40%</b></div>
+          <input type="range" id="volSlider" min="0" max="100" step="1" value="40" aria-label="Volume">
+        </div>
+        <div class="presets">
+          <button type="button" class="nudge-btn" data-m="0.5" data-d="0">Só a fonte se move</button>
+          <button type="button" class="nudge-btn" data-m="0" data-d="0.5">Só os ouvintes se movem</button>
+          <button type="button" class="nudge-btn" data-m="0.3" data-d="0.3">Mesma velocidade</button>
+          <button type="button" class="nudge-btn" data-m="1" data-d="0">Mach 1</button>
+          <button type="button" class="nudge-btn" data-m="1.5" data-d="0">Mach 1,5</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2>O que cada ouvinte mede</h2>
+        <div class="formula" id="formulaBox">f′ = f · (v ∓ v<sub>D</sub>) / (v ∓ v<sub>F</sub>)</div>
+        <table class="meas">
+          <thead><tr><th></th><th>fórmula</th><th>contagem de frentes</th><th>λ′ no ar</th></tr></thead>
+          <tbody>
+            <tr><th scope="row">A (à frente)</th><td id="thA">—</td><td id="meA">—</td><td id="laA">—</td></tr>
+            <tr><th scope="row">B (atrás)</th><td id="thB">—</td><td id="meB">—</td><td id="laB">—</td></tr>
+          </tbody>
+        </table>
+        <div class="story" id="story1"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CENÁRIO 2 ============ -->
+  <section id="sc2" hidden>
+    <div class="stage">
+      <div class="canvas-wrap map"><canvas id="cv2a" role="img" aria-label="Fonte passando por um ouvinte a uma distância lateral d"></canvas></div>
+      <div class="canvas-wrap graph"><canvas id="cv2b" role="img" aria-label="Frequência ouvida em função da posição da fonte"></canvas></div>
+      <div class="zoom-label">frequência ouvida em função da posição da fonte — o ponto mostra o instante atual</div>
+      <div class="transport">
+        <button class="play-btn" id="listenBtn2" type="button">
+          <svg viewBox="0 0 16 16" fill="currentColor"><path d="M4 2.5v11l9-5.5-9-5.5z"/></svg>
+          <span id="listenLabel2">Ouvir</span>
+        </button>
+        <button class="play-btn ghost" id="restartBtn2" type="button">Reiniciar</button>
+        <button class="play-btn ghost" id="freezeBtn2" type="button">Pausar</button>
+      </div>
+    </div>
+    <div class="panels">
+      <div class="panel">
+        <h2>Controles</h2>
+        <div class="control">
+          <div class="control-label"><span>Velocidade da fonte, <i>v<sub>F</sub></i></span><b id="uVal">25 m/s</b></div>
+          <input type="range" id="uSlider" min="5" max="80" step="1" value="25" aria-label="Velocidade da fonte">
+          <div class="subval" id="uSub">90 km/h</div>
+        </div>
+        <div class="control">
+          <div class="control-label"><span>Distância lateral da pista, <i>d</i></span><b id="dlVal">10 m</b></div>
+          <input type="range" id="dlSlider" min="1" max="60" step="1" value="10" aria-label="Distância lateral">
+        </div>
+        <div class="control">
+          <div class="control-label"><span>Volume</span><b id="vVal2">40%</b></div>
+          <input type="range" id="volSlider2" min="0" max="100" step="1" value="40" aria-label="Volume">
+        </div>
+        <div class="story">Sirene de <b>440&nbsp;Hz</b>, <i>v</i> = 343&nbsp;m/s. Tente prever: se a pista passa colada em você (<i>d</i> pequeno), a queda de frequência é suave ou abrupta?</div>
+      </div>
+      <div class="panel">
+        <h2>Leitura</h2>
+        <div class="formula">f′ = f · v / (v − v<sub>F</sub> cos φ)</div>
+        <dl class="readout-grid">
+          <div><dt>Agora</dt><dd id="o2now">440,0 Hz</dd></div>
+          <div><dt>Componente na linha de visada</dt><dd id="o2cos">0,0 m/s</dd></div>
+          <div><dt>Máximo (muito longe, aproximando)</dt><dd id="o2max">—</dd></div>
+          <div><dt>Mínimo (muito longe, afastando)</dt><dd id="o2min">—</dd></div>
+        </dl>
+        <div class="story">Só a componente da velocidade <b>ao longo da linha fonte–ouvinte</b> conta. Em frente a você ela é zero e <i>f′</i> = <i>f</i>.</div>
+      </div>
+    </div>
+  </section>
+
+  <footer>Fonte móvel: λ′ = (v ∓ v<sub>F</sub>)/f. Ouvinte móvel: velocidade relativa v ± v<sub>D</sub>. Para v<sub>F</sub> &gt; v: onda de choque, sen θ = v/v<sub>F</sub>.</footer>
+
+  <div class="f2-nextbar"><a href="../batimento/">← Batimento</a> &nbsp;·&nbsp; <a href="../">Todas as simulações</a></div>
+</div>
+
+<script src="doppler.js"></script>
+</body>
+</html>
