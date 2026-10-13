@@ -18,7 +18,7 @@
   header h1{font-family:'Newsreader',Georgia,serif;font-size:1.6rem;margin:0;line-height:1.2}
   header .sub{color:var(--dim);font-size:.82rem}
   .grid{display:grid;grid-template-columns:1fr 380px;gap:16px}
-  @media(max-width:900px){.grid{grid-template-columns:1fr}}
+  @media(max-width:900px){.grid{grid-template-columns:1fr}.grid>div{display:contents}.p-cena{order:1}.p-ctl{order:2}.p-dcl{order:3}.p-dcl,.p-ctl{margin-top:0!important}}
   .panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:14px}
   .panel h2{font-size:.95rem;color:var(--ink);margin:0 0 10px;font-weight:600}
   canvas{width:100%;height:auto;aspect-ratio:1/1;max-height:640px;display:block;background:#0c1626;border-radius:8px;touch-action:none;cursor:grab}
@@ -100,21 +100,21 @@
     <div class="row" style="margin-bottom:10px"><button id="bMenu">← Categorias</button><span class="hint" id="crumb"></span></div>
     <div class="grid">
       <div>
-        <div class="panel">
+        <div class="panel p-cena">
           <div class="chips" id="chips" role="group" aria-label="Situações da categoria"></div>
           <div class="prog" id="prog"></div>
           <h2 id="titulo"></h2>
           <svg class="cena" id="cena" viewBox="0 0 480 260" role="img" aria-label="Situação física"></svg>
           <div id="dados" style="margin-top:8px"></div>
         </div>
-        <div class="panel" style="margin-top:14px">
+        <div class="panel p-dcl" style="margin-top:14px">
           <h2>Seu diagrama (só o corpo, só as forças que agem nele)</h2>
           <svg class="cena" id="dcl" viewBox="0 0 480 480" role="img" aria-label="Área do diagrama de corpo livre: ângulo 0 graus é para a direita, 90 para cima"></svg>
-          <p class="hint">Ângulo: 0° = direita, 90° = cima, 180° = esquerda, 270° = baixo (medido no sentido anti-horário). Tamanho da seta = intensidade da força.</p>
+          <p class="hint">Ângulo (de 1 em 1 grau, ou digite o valor): 0° = direita, 90° = cima, 180° = esquerda, 270° = baixo (medido no sentido anti-horário). Tamanho da seta = intensidade da força.</p>
         </div>
       </div>
       <div>
-        <div class="panel">
+        <div class="panel p-ctl">
           <h2>1. O corpo está…</h2>
           <div class="row estado" id="estado" role="group" aria-label="Estado de movimento do corpo">
             <button data-e="parado">parado</button><button data-e="vconst">com velocidade constante</button><button data-e="acel">acelerado (ΣF ≠ 0)</button>
@@ -382,7 +382,8 @@ const V=()=>S.view==='teste'?sitAtual().vars[S.teste.casos[S.teste.k].vi]:SIT[S.
 const rec=()=>S.view==='teste'?S.teste.casos[S.teste.k]:dCur().reg[dCur().reg.length-1];
 
 // ---- desenho do DCL ----
-const U=34,CX=240,CY=240,UMAX=6;
+const U=34,CX=240,CY=240,UMAX=6;let Z=1;
+function ajustaZoom(){const m=Math.max(0,...S.forcas.map(f=>f.len));Z=m>0&&m<3?Math.min(4,3.5/m):1}
 function marcadores(cores){return '<defs>'+cores.map(c=>`<marker id="h${c.slice(1)}" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="${c}"/></marker>`).join('')+'</defs>'}
 const todasCores=[...new Set(['#86efac',...Object.values(FORCAS).map(f=>f.cor)])];
 function seta(ang,len,cor,tr){
@@ -396,7 +397,8 @@ function desenhaDCL(solucao){
   [['0°',CX+UMAX*U+6,CY+4],['90°',CX-9,CY-UMAX*U-6],['180°',CX-UMAX*U-34,CY+4],['270°',CX-12,CY+UMAX*U+16]].forEach(([t,x,y])=>h+=`<text x="${x}" y="${y}" fill="#6b7f9e" font-size="12">${t}</text>`);
   if(solucao){const e=V().esp,mx=Math.max(...Object.values(e).map(v=>v.rel)),P0=Math.min(3,5.5/mx);
     for(const k in e)h+=seta(e[k].ang,e[k].rel*P0,'#86efac',true)}
-  S.forcas.forEach(f=>{const F=FORCAS[f.k];h+=seta(f.ang,f.len,F.cor,['mov','cf'].includes(f.k));h+=rotulo(f.k,f.ang,f.len)});
+  S.forcas.forEach(f=>{const F=FORCAS[f.k];h+=seta(f.ang,f.len*Z,F.cor,['mov','cf'].includes(f.k));h+=rotulo(f.k,f.ang,f.len*Z)});
+  if(Z>1)h+=`<text x="12" y="22" fill="#6b7f9e" font-size="13">escala ×${Z.toFixed(1).replace('.',',')}</text>`;
   h+=`<rect x="${CX-11}" y="${CY-11}" width="22" height="22" rx="3" fill="#7FB2E5" stroke="#cfe1f5"/>`;
   $('dcl').innerHTML=h;
 }
@@ -417,10 +419,12 @@ function lista(){
   S.forcas.forEach((f,idx)=>{
     const F=FORCAS[f.k],d=document.createElement('div');d.className='frow';
     d.innerHTML=`<span class="nome" style="color:${F.cor}">${F.nome} <i style="font-family:Newsreader,serif">${F.sim}<sub>${F.sub}</sub></i></span><button class="rem" aria-label="Remover ${F.nome}">Remover</button>
-      <div class="ctl"><label for="a${idx}">Ângulo</label><input id="a${idx}" type="range" min="0" max="345" step="15" value="${f.ang}"><span class="mono" id="av${idx}">${f.ang}°</span>
+      <div class="ctl"><label for="a${idx}">Ângulo</label><input id="a${idx}" type="range" min="0" max="359" step="1" value="${f.ang}"><input class="mono num" id="av${idx}" type="number" inputmode="numeric" min="0" max="359" step="1" value="${f.ang}" aria-label="Ângulo de ${F.nome} em graus">
       <label for="l${idx}">Tamanho</label><input id="l${idx}" type="range" min="0.2" max="${UMAX}" step="0.01" value="${f.len}"><input class="mono num" id="lv${idx}" type="number" inputmode="decimal" min="0.2" max="${UMAX}" step="0.01" value="${f.len.toFixed(2)}" aria-label="Tamanho de ${F.nome}"></div>`;
     d.querySelector('.rem').onclick=()=>{S.forcas.splice(idx,1);render()};
-    d.querySelector(`#a${idx}`).oninput=e=>{f.ang=+e.target.value;$('av'+idx).textContent=f.ang+'°';desenhaDCL()};
+    d.querySelector(`#a${idx}`).oninput=e=>{f.ang=+e.target.value;$('av'+idx).value=f.ang;desenhaDCL()};
+    d.querySelector(`#av${idx}`).oninput=e=>{const v=parseFloat(String(e.target.value).replace(',','.'));if(!isNaN(v)){f.ang=((Math.round(v)%360)+360)%360;$('a'+idx).value=f.ang;desenhaDCL()}};
+    d.querySelector(`#a${idx}`).onchange=d.querySelector(`#av${idx}`).onchange=d.querySelector(`#l${idx}`).onchange=d.querySelector(`#lv${idx}`).onchange=()=>{ajustaZoom();desenhaDCL(rec().feito&&rec().mostra)};
     d.querySelector(`#l${idx}`).oninput=e=>{f.len=+e.target.value;$('lv'+idx).value=f.len.toFixed(2);desenhaDCL()};
     d.querySelector(`#lv${idx}`).oninput=e=>{const v=parseFloat(String(e.target.value).replace(',','.'));if(!isNaN(v)){f.len=Math.min(UMAX,Math.max(0.2,v));$('l'+idx).value=f.len;desenhaDCL()}};
     if(rec().feito)d.querySelectorAll('input,.rem').forEach(x=>x.disabled=true);
@@ -437,7 +441,7 @@ function cena(){
   $('cena').innerHTML=v.cena();
   $('dados').innerHTML=v.dados.map(t=>`<p class="dado">${t}</p>`).join('');
 }
-function render(){paleta();lista();desenhaDCL(rec().feito&&rec().mostra)}
+function render(){ajustaZoom();paleta();lista();desenhaDCL(rec().feito&&rec().mostra)}
 const MSG0='Pense antes: quem está empurrando ou puxando o corpo? Só entra força que tem um autor.';
 function iniciaSituacao(){
   S.forcas=[];const r=rec();cena();
